@@ -133,10 +133,13 @@ impl State {
         }
     }
 
+    /// Update the surface to match the new window size.
+    /// The surface's image buffers were sized for the old window — without this they'd
+    /// either crash wgpu or stretch a stale image across the new window.
     fn resize(&mut self, width: u32, height: u32) {
+        // Minimizing fires a resize with (0, 0). Configuring a 0-sized surface is a
+        // wgpu validation error, so skip it; the next resize (un-minimize) will reconfigure.
         if width == 0 || height == 0 {
-            // Configuring a 0-sized surface is a wgpu validation error — so we skip it and let the
-            // next resize (when the user un-minimizes) reconfigure properly.
             return;
         }
         self.surface_configuration.width = width;
@@ -145,7 +148,17 @@ impl State {
             .configure(&self.device, &self.surface_configuration)
     }
 
-    fn render(&mut self) { // called each frame
+    /// Draw one frame. Called on every `RedrawRequested`.
+    ///
+    /// The four-step rhythm of a wgpu frame:
+    ///   1. **Acquire** — get the next surface texture to draw into.
+    ///   2. **Encode** — record GPU commands into a CommandEncoder.
+    ///   3. **Submit** — hand the recorded commands to the queue.
+    ///   4. **Present** — tell the OS to display the finished frame.
+    fn render(&mut self) {
+        // 1. Acquire. The surface hands us the next image to render into.
+        // Lost/Outdated typically follow a resize or wake-from-sleep — recover by reconfiguring
+        // and dropping this frame.
         let frame = match self.surface.get_current_texture() {
             Ok(frame) => frame,
             Err(wgpu::SurfaceError::Lost | wgpu::SurfaceError::Outdated) => {
@@ -159,17 +172,25 @@ impl State {
             }
         };
 
+        // 2. Encode. A CommandEncoder is a buffer that we record GPU commands into;
+        // nothing executes until we submit. Always cheap to make a fresh one per frame.
         let mut encoder = self
             .device
             .create_command_encoder(&wgpu::CommandEncoderDescriptor {
                 label: Some("Render Encoder"),
             });
 
+        // Inner scope: the render pass borrows `encoder` mutably. We must drop the pass
+        // before calling `encoder.finish()` below — ending this block does that.
         {
+            // A TextureView is a typed window into a texture. The render pass writes via the view,
+            // not the texture directly, so it knows the format/layout it's working with.
             let view = frame
                 .texture
                 .create_view(&wgpu::TextureViewDescriptor::default());
 
+            // `load` says what's already in the attachment when the pass starts; `store` says
+            // whether to keep what we wrote. Clear-on-load + Store == "wipe to this color, keep result."
             let operations = wgpu::Operations {
                 load: wgpu::LoadOp::Clear(wgpu::Color {
                     r: 0.1,
@@ -179,12 +200,16 @@ impl State {
                 }),
                 store: wgpu::StoreOp::Store,
             };
+            // A color attachment hooks a TextureView into a render pass slot.
+            // `resolve_target` is for MSAA (multisample antialiasing) — unused here.
             let color_attachment = wgpu::RenderPassColorAttachment {
                 view: &view,
                 resolve_target: None,
                 depth_slice: None,
                 ops: operations,
             };
+            // A render pass is one bundle of "draw into these targets with these settings."
+            // Even just to clear, we still need a pass — clearing is part of starting one.
             let descriptor = wgpu::RenderPassDescriptor {
                 label: Some("Clear Pass"),
                 color_attachments: &[Some(color_attachment)],
@@ -193,14 +218,20 @@ impl State {
                 occlusion_query_set: None,
             };
             let _render_pass = encoder.begin_render_pass(&descriptor);
-        } // We can't call encoder.finish() while the pass is still alive, so we drop it by ending the scope, hence the { ... } block
+        }
 
+        // 3. Submit. The queue runs the recorded commands on the GPU.
         self.queue.submit(once(encoder.finish()));
-        frame.present(); // without that, nothing is drawn
+        // 4. Present. Without this, the GPU drew but the OS never shows it.
+        frame.present();
+        // Ask winit for another RedrawRequested so we keep rendering continuously.
         self.window.request_redraw();
     }
 }
 
+/// The winit application handler. Holds rendering state in an Option because
+/// the window (and therefore the wgpu state) only exists between `resumed` and
+/// `suspended` — on platforms like Android the OS can drop them out from under us.
 #[derive(Default)]
 struct App {
     state: Option<State>,
