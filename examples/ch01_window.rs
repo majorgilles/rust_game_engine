@@ -1,9 +1,10 @@
 use std::sync::Arc;
 use winit::application::ApplicationHandler;
 use winit::dpi::PhysicalSize;
-use winit::event::WindowEvent;
+use winit::event::{WindowEvent, ElementState, KeyEvent};
 use winit::event_loop::{ActiveEventLoop, EventLoop};
 use winit::window::{Window, WindowId};
+use winit::keyboard::{Key, NamedKey};
 
 const WIDTH: u32 = 1280;
 const HEIGHT: u32 = 720;
@@ -61,19 +62,30 @@ impl ApplicationHandler for App {
         match event {
             WindowEvent::CloseRequested => {
                 println!("Quitting!");
-                event_loop.exit();
+                event_loop.exit()
             }
             WindowEvent::Resized(physical_size) => {
                 println!("Resized called!");
                 if let Some(state) = self.state.as_mut() {
-                    state.resize(physical_size.width, physical_size.height);
+                    state.resize(physical_size.width, physical_size.height)
                 }
             }
             WindowEvent::RedrawRequested => {
                 println!("Redraw requested!");
                 if let Some(state) = self.state.as_mut() {
-                    state.render();
+                    state.render()
                 }
+            }
+            WindowEvent::KeyboardInput {
+                event: KeyEvent {
+                    state: ElementState::Pressed,
+                    logical_key: Key::Named(NamedKey::Escape),
+                    ..
+                },
+                ..
+            } => {
+                println!("Escape pressed - quitting!");
+                event_loop.exit()
             }
             _ => {}
         }
