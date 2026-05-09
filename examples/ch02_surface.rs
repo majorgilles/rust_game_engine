@@ -116,10 +116,6 @@ impl State {
             }
         };
 
-        let view = frame
-            .texture
-            .create_view(&wgpu::TextureViewDescriptor::default());
-
         let mut encoder = self
             .device
             .create_command_encoder(&wgpu::CommandEncoderDescriptor {
@@ -127,6 +123,10 @@ impl State {
             });
 
         {
+            let view = frame
+                .texture
+                .create_view(&wgpu::TextureViewDescriptor::default());
+            
             let operations = wgpu::Operations {
                 load: wgpu::LoadOp::Clear(wgpu::Color {
                     r: 0.1,
