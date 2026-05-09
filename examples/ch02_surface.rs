@@ -102,7 +102,7 @@ impl State {
             .configure(&self.device, &self.surface_configuration)
     }
 
-    fn render(&mut self) {
+    fn render(&mut self) { // called each frame
         let frame = match self.surface.get_current_texture() {
             Ok(frame) => frame,
             Err(wgpu::SurfaceError::Lost | wgpu::SurfaceError::Outdated) => {
@@ -126,7 +126,7 @@ impl State {
             let view = frame
                 .texture
                 .create_view(&wgpu::TextureViewDescriptor::default());
-            
+
             let operations = wgpu::Operations {
                 load: wgpu::LoadOp::Clear(wgpu::Color {
                     r: 0.1,
@@ -150,10 +150,10 @@ impl State {
                 occlusion_query_set: None,
             };
             let _render_pass = encoder.begin_render_pass(&descriptor);
-        }
+        } // We can't call encoder.finish() while the pass is still alive, so we drop it by ending the scope, hence the { ... } block
 
         self.queue.submit(once(encoder.finish()));
-        frame.present();
+        frame.present(); // without that, nothing is drawn
         self.window.request_redraw();
     }
 }
