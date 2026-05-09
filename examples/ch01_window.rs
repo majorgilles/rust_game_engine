@@ -64,11 +64,13 @@ impl ApplicationHandler for App {
                 event_loop.exit();
             }
             WindowEvent::Resized(physical_size) => {
+                println!("Resized called!");
                 if let Some(state) = self.state.as_mut() {
                     state.resize(physical_size.width, physical_size.height);
                 }
             }
             WindowEvent::RedrawRequested => {
+                println!("Redraw requested!");
                 if let Some(state) = self.state.as_mut() {
                     state.render();
                 }
