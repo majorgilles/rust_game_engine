@@ -1,10 +1,10 @@
 use std::sync::Arc;
 use winit::application::ApplicationHandler;
 use winit::dpi::PhysicalSize;
-use winit::event::{WindowEvent, ElementState, KeyEvent};
+use winit::event::{ElementState, KeyEvent, WindowEvent};
 use winit::event_loop::{ActiveEventLoop, EventLoop};
-use winit::window::{Window, WindowId};
 use winit::keyboard::{Key, NamedKey};
+use winit::window::{Window, WindowId};
 
 const WIDTH: u32 = 1280;
 const HEIGHT: u32 = 720;
@@ -77,11 +77,13 @@ impl ApplicationHandler for App {
                 }
             }
             WindowEvent::KeyboardInput {
-                event: KeyEvent { // this pattern is a filter that triggers if the Escape key is pressed ONLY
-                    state: ElementState::Pressed,
-                    logical_key: Key::Named(NamedKey::Escape),
-                    ..
-                },
+                event:
+                    KeyEvent {
+                        // this pattern is a filter that triggers if the Escape key is pressed ONLY
+                        state: ElementState::Pressed,
+                        logical_key: Key::Named(NamedKey::Escape),
+                        ..
+                    },
                 ..
             } => {
                 println!("Escape pressed - quitting!");
