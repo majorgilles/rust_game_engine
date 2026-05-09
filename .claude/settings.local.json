@@ -2,7 +2,9 @@
   "permissions": {
     "allow": [
       "Bash(gh issue *)",
-      "Bash(gh label *)"
+      "Bash(gh label *)",
+      "Bash(gh api *)",
+      "WebFetch(domain:sotrh.github.io)"
     ]
   }
 }
