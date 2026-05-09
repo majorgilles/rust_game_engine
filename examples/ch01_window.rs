@@ -34,6 +34,7 @@ impl ApplicationHandler for App {
     ) {
         match event {
             WindowEvent::CloseRequested => {
+                println!("Quitting!");
                 event_loop.exit();
             }
             _ => {}
@@ -42,7 +43,7 @@ impl ApplicationHandler for App {
 }
 
 fn main() {
-    env_logger::init(); // TODO what does this do
+    env_logger::init(); // turns on logging output. wgpu will use it later
     let event_loop = EventLoop::new().expect("Failed to create event loop");
     let mut app = App::default();
 
