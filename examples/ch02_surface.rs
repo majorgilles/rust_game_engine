@@ -89,7 +89,16 @@ impl State {
         }
     }
 
-    fn resize(&mut self, _width: u32, _height: u32) {}
+    fn resize(&mut self, width: u32, height: u32) {
+        if width == 0 || height == 0 {
+            // Configuring a 0-sized surface is a wgpu validation error — so we skip it and let the
+            // next resize (when the user un-minimizes) reconfigure properly.
+            return;
+        }
+        self.surface_configuration.width = width;
+        self.surface_configuration.height = height;
+        self.surface.configure(&self.device, &self.surface_configuration)
+    }
 
     fn render(&mut self) {
         self.arc_window.request_redraw();
