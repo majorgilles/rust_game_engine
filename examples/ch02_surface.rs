@@ -63,7 +63,7 @@ impl State {
             .formats
             .iter()
             .copied()
-            .find(|f| f.is_srgb())
+            .find(|f| f.is_srgb()) // sRGB is the color space your monitor expects. Picking it means colors look right without us doing math.
             .unwrap_or(surface_capabilities.formats[0]);
 
         let surface_configuration = wgpu::SurfaceConfiguration {
