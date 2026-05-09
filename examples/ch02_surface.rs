@@ -22,7 +22,7 @@ impl State {
         let instance = wgpu::Instance::new(&instance_descriptor);
 
         let surface = instance
-            .create_surface(arc_window.clone()) // we clone the arc, not the window. It bumps the reference count. Surface gets handle to the window.
+            .create_surface(arc_window.clone()) // It bumps the reference count. Surface gets handle to the window.
             .expect("Failed to create surface");
         Self {
             arc_window,
