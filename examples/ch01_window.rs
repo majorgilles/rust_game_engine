@@ -1,7 +1,6 @@
+use std::sync::Arc;
 use winit::application::ApplicationHandler;
 use winit::dpi::PhysicalSize;
-// a trait we'll implement
-use std::sync::Arc;
 use winit::event::WindowEvent;
 use winit::event_loop::{ActiveEventLoop, EventLoop};
 use winit::window::{Window, WindowId};
@@ -36,6 +35,10 @@ struct App {
 
 impl ApplicationHandler for App {
     fn resumed(&mut self, event_loop: &ActiveEventLoop) {
+        if self.state.is_some() {
+            return;
+        }
+
         let window_attributes = Window::default_attributes()
             .with_title("Rust Game Engine - ch01")
             .with_inner_size(PhysicalSize::new(WIDTH, HEIGHT));
