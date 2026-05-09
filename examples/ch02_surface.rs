@@ -1,3 +1,4 @@
+use pollster::FutureExt;
 use std::sync::Arc;
 use winit::application::ApplicationHandler;
 use winit::dpi::PhysicalSize;
@@ -14,6 +15,8 @@ struct State {
     instance: wgpu::Instance,
     // A Surface is the bridge between your Window and wgpu
     surface: wgpu::Surface<'static>, // 'static == this surface holds something that lives forever
+    // An Adapter is a handle to a specific physical GPU on the machine
+    adapter: wgpu::Adapter,
 }
 
 impl State {
@@ -25,10 +28,21 @@ impl State {
         let surface = instance
             .create_surface(arc_window.clone()) // .clone() bumps the reference count. Surface gets handle to the window.
             .expect("Failed to create surface");
+
+        let adapter = instance
+            .request_adapter(&wgpu::RequestAdapterOptions {
+                power_preference: wgpu::PowerPreference::HighPerformance,
+                force_fallback_adapter: false,
+                compatible_surface: Some(&surface),
+            })
+            .block_on()
+            .expect("Failed to find an appropriate adapter");
+
         Self {
             arc_window,
             instance,
             surface,
+            adapter,
         }
     }
 
@@ -70,9 +84,7 @@ impl ApplicationHandler for App {
         event: WindowEvent,
     ) {
         match event {
-            WindowEvent::CloseRequested => {
-                event_loop.exit()
-            }
+            WindowEvent::CloseRequested => event_loop.exit(),
             WindowEvent::Resized(physical_size) => {
                 if let Some(state) = self.state.as_mut() {
                     state.resize(physical_size.width, physical_size.height)
@@ -92,9 +104,7 @@ impl ApplicationHandler for App {
                         ..
                     },
                 ..
-            } => {
-                event_loop.exit()
-            }
+            } => event_loop.exit(),
             _ => {}
         }
     }
