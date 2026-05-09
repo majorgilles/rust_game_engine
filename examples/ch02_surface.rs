@@ -16,7 +16,9 @@ struct State {
 
 impl State {
     fn new(window: Arc<Window>) -> Self {
-        let instance = wgpu::Instance::new(&wgpu::InstanceDescriptor::default());
+        // InstanceDescriptor::default() lets wgpu pick whichever backend the OS prefers
+        let instance_descriptor = wgpu::InstanceDescriptor::default();
+        let instance = wgpu::Instance::new(&instance_descriptor);
         Self { window, instance }
     }
 
