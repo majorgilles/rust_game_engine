@@ -10,22 +10,31 @@ const WIDTH: u32 = 1280;
 const HEIGHT: u32 = 720;
 
 struct State {
-    window: Arc<Window>,
+    arc_window: Arc<Window>,
     instance: wgpu::Instance,
+    surface: wgpu::Surface<'static>, // 'static == this surface holds something that lives forever
 }
 
 impl State {
-    fn new(window: Arc<Window>) -> Self {
+    fn new(arc_window: Arc<Window>) -> Self {
         // InstanceDescriptor::default() lets wgpu pick whichever backend the OS prefers
         let instance_descriptor = wgpu::InstanceDescriptor::default();
         let instance = wgpu::Instance::new(&instance_descriptor);
-        Self { window, instance }
+
+        let surface = instance
+            .create_surface(arc_window.clone()) // we clone the arc, not the window. It bumps the reference count. Surface gets handle to the window.
+            .expect("Failed to create surface");
+        Self {
+            arc_window,
+            instance,
+            surface,
+        }
     }
 
     fn resize(&mut self, _width: u32, _height: u32) {}
 
     fn render(&mut self) {
-        self.window.request_redraw();
+        self.arc_window.request_redraw();
     }
 }
 
@@ -61,17 +70,14 @@ impl ApplicationHandler for App {
     ) {
         match event {
             WindowEvent::CloseRequested => {
-                println!("Quitting!");
                 event_loop.exit()
             }
             WindowEvent::Resized(physical_size) => {
-                println!("Resized called!");
                 if let Some(state) = self.state.as_mut() {
                     state.resize(physical_size.width, physical_size.height)
                 }
             }
             WindowEvent::RedrawRequested => {
-                println!("Redraw requested!");
                 if let Some(state) = self.state.as_mut() {
                     state.render()
                 }
@@ -86,7 +92,6 @@ impl ApplicationHandler for App {
                     },
                 ..
             } => {
-                println!("Escape pressed - quitting!");
                 event_loop.exit()
             }
             _ => {}
