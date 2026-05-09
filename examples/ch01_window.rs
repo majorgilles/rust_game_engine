@@ -1,6 +1,7 @@
 use winit::application::ApplicationHandler;
 use winit::dpi::PhysicalSize;
 // a trait we'll implement
+use std::sync::Arc;
 use winit::event::WindowEvent;
 use winit::event_loop::{ActiveEventLoop, EventLoop};
 use winit::window::{Window, WindowId};
@@ -8,9 +9,29 @@ use winit::window::{Window, WindowId};
 const WIDTH: u32 = 1280;
 const HEIGHT: u32 = 720;
 
+struct State {
+    // Arc: wgpu's Surface (added in ch02) needs to share window ownership.
+    window: Arc<Window>,
+}
+
+impl State {
+    fn new(window: Arc<Window>) -> Self {
+        Self { window }
+    }
+
+    fn resize(&mut self, _width: u32, _height: u32) {
+        // ch02 will reconfig the wgpu surface here
+    }
+
+    fn render(&mut self) {
+        // ch02 will record + submit a render pass here
+        self.window.request_redraw();
+    }
+}
+
 #[derive(Default)]
 struct App {
-    window: Option<Window>,
+    state: Option<State>,
 }
 
 impl ApplicationHandler for App {
@@ -19,11 +40,13 @@ impl ApplicationHandler for App {
             .with_title("Rust Game Engine - ch01")
             .with_inner_size(PhysicalSize::new(WIDTH, HEIGHT));
 
-        self.window = Some(
-            event_loop
+        self.state = {
+            let window = event_loop
                 .create_window(window_attributes)
-                .expect("Failed to create window"),
-        )
+                .expect("Failed to create window");
+            let window_ref = Arc::new(window);
+            Some(State::new(window_ref))
+        }
     }
 
     fn window_event(
