@@ -17,6 +17,10 @@ struct State {
     surface: wgpu::Surface<'static>, // 'static == this surface holds something that lives forever
     // An Adapter is a handle to a specific physical GPU on the machine
     adapter: wgpu::Adapter,
+    // Adapter -- your open connection to the GPU. Used to create resources (buffers, textures, pipelines)
+    device: wgpu::Device,
+    // Queue — where you submit commands for the GPU to execute
+    queue: wgpu::Queue,
 }
 
 impl State {
@@ -38,11 +42,26 @@ impl State {
             .block_on()
             .expect("Failed to find an appropriate adapter");
 
+        let device_descriptor = wgpu::DeviceDescriptor {
+            label: Some("Main Device"),
+            required_features: wgpu::Features::empty(),
+            required_limits: wgpu::Limits::default(),
+            memory_hints: wgpu::MemoryHints::default(),
+            trace: wgpu::Trace::Off,
+            experimental_features: wgpu::ExperimentalFeatures::default(),
+        };
+        let (device, queue) = adapter
+            .request_device(&device_descriptor)
+            .block_on()
+            .expect("Failed to create device.");
+
         Self {
             arc_window,
             instance,
             surface,
             adapter,
+            device,
+            queue,
         }
     }
 
