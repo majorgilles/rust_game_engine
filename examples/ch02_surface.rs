@@ -1,4 +1,5 @@
 use pollster::FutureExt;
+use std::iter::once;
 use std::sync::Arc;
 use winit::application::ApplicationHandler;
 use winit::dpi::PhysicalSize;
@@ -11,7 +12,7 @@ const WIDTH: u32 = 1280;
 const HEIGHT: u32 = 720;
 
 struct State {
-    arc_window: Arc<Window>,
+    window: Arc<Window>,
     instance: wgpu::Instance,
     // A Surface is the bridge between your Window and wgpu
     surface: wgpu::Surface<'static>, // 'static == this surface holds something that lives forever
@@ -25,13 +26,13 @@ struct State {
 }
 
 impl State {
-    fn new(arc_window: Arc<Window>) -> Self {
+    fn new(window: Arc<Window>) -> Self {
         // InstanceDescriptor::default() lets wgpu pick whichever backend the OS prefers
         let instance_descriptor = wgpu::InstanceDescriptor::default();
         let instance = wgpu::Instance::new(&instance_descriptor);
 
         let surface = instance
-            .create_surface(arc_window.clone()) // .clone() bumps the reference count. Surface gets handle to the window.
+            .create_surface(window.clone()) // .clone() bumps the reference count. Surface gets handle to the window.
             .expect("Failed to create surface");
 
         let adapter = instance
@@ -56,7 +57,7 @@ impl State {
             .block_on()
             .expect("Failed to create device.");
 
-        let size = arc_window.inner_size();
+        let size = window.inner_size();
         let surface_capabilities = surface.get_capabilities(&adapter);
 
         let surface_format = surface_capabilities
@@ -79,7 +80,7 @@ impl State {
         surface.configure(&device, &surface_configuration);
 
         Self {
-            arc_window,
+            window,
             instance,
             surface,
             adapter,
@@ -97,11 +98,63 @@ impl State {
         }
         self.surface_configuration.width = width;
         self.surface_configuration.height = height;
-        self.surface.configure(&self.device, &self.surface_configuration)
+        self.surface
+            .configure(&self.device, &self.surface_configuration)
     }
 
     fn render(&mut self) {
-        self.arc_window.request_redraw();
+        let frame = match self.surface.get_current_texture() {
+            Ok(frame) => frame,
+            Err(wgpu::SurfaceError::Lost | wgpu::SurfaceError::Outdated) => {
+                self.surface
+                    .configure(&self.device, &self.surface_configuration);
+                return;
+            }
+            Err(e) => {
+                eprintln!("Surface error: {e:?}");
+                return;
+            }
+        };
+
+        let view = frame
+            .texture
+            .create_view(&wgpu::TextureViewDescriptor::default());
+
+        let mut encoder = self
+            .device
+            .create_command_encoder(&wgpu::CommandEncoderDescriptor {
+                label: Some("Render Encoder"),
+            });
+
+        {
+            let operations = wgpu::Operations {
+                load: wgpu::LoadOp::Clear(wgpu::Color {
+                    r: 0.1,
+                    g: 0.2,
+                    b: 0.3,
+                    a: 1.0,
+                }),
+                store: wgpu::StoreOp::Store,
+            };
+            let color_attachment = wgpu::RenderPassColorAttachment {
+                view: &view,
+                resolve_target: None,
+                depth_slice: None,
+                ops: operations,
+            };
+            let descriptor = wgpu::RenderPassDescriptor {
+                label: Some("Clear Pass"),
+                color_attachments: &[Some(color_attachment)],
+                depth_stencil_attachment: None,
+                timestamp_writes: None,
+                occlusion_query_set: None,
+            };
+            let _render_pass = encoder.begin_render_pass(&descriptor);
+        }
+
+        self.queue.submit(once(encoder.finish()));
+        frame.present();
+        self.window.request_redraw();
     }
 }
 
