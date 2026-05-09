@@ -21,6 +21,7 @@ struct State {
     device: wgpu::Device,
     // Queue — where you submit commands for the GPU to execute
     queue: wgpu::Queue,
+    surface_configuration: wgpu::SurfaceConfiguration,
 }
 
 impl State {
@@ -55,6 +56,28 @@ impl State {
             .block_on()
             .expect("Failed to create device.");
 
+        let size = arc_window.inner_size();
+        let surface_capabilities = surface.get_capabilities(&adapter);
+
+        let surface_format = surface_capabilities
+            .formats
+            .iter()
+            .copied()
+            .find(|f| f.is_srgb())
+            .unwrap_or(surface_capabilities.formats[0]);
+
+        let surface_configuration = wgpu::SurfaceConfiguration {
+            usage: wgpu::TextureUsages::RENDER_ATTACHMENT,
+            format: surface_format,
+            width: size.width.max(1),
+            height: size.height.max(1),
+            present_mode: surface_capabilities.present_modes[0],
+            desired_maximum_frame_latency: 2,
+            alpha_mode: surface_capabilities.alpha_modes[0],
+            view_formats: vec![],
+        };
+        surface.configure(&device, &surface_configuration);
+
         Self {
             arc_window,
             instance,
@@ -62,6 +85,7 @@ impl State {
             adapter,
             device,
             queue,
+            surface_configuration,
         }
     }
 
