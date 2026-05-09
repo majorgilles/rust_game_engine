@@ -12,6 +12,7 @@ const HEIGHT: u32 = 720;
 struct State {
     arc_window: Arc<Window>,
     instance: wgpu::Instance,
+    // A Surface is the bridge between your Window and wgpu
     surface: wgpu::Surface<'static>, // 'static == this surface holds something that lives forever
 }
 
