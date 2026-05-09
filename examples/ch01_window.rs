@@ -77,7 +77,7 @@ impl ApplicationHandler for App {
                 }
             }
             WindowEvent::KeyboardInput {
-                event: KeyEvent {
+                event: KeyEvent { // this pattern is a filter that triggers if the Escape key is pressed ONLY
                     state: ElementState::Pressed,
                     logical_key: Key::Named(NamedKey::Escape),
                     ..
