@@ -1,25 +1,26 @@
 use std::sync::Arc;
 use winit::application::ApplicationHandler;
 use winit::dpi::PhysicalSize;
-use winit::event::{WindowEvent, ElementState, KeyEvent};
+use winit::event::{ElementState, KeyEvent, WindowEvent};
 use winit::event_loop::{ActiveEventLoop, EventLoop};
-use winit::window::{Window, WindowId};
 use winit::keyboard::{Key, NamedKey};
+use winit::window::{Window, WindowId};
 
 const WIDTH: u32 = 1280;
 const HEIGHT: u32 = 720;
 
 struct State {
     window: Arc<Window>,
+    instance: wgpu::Instance,
 }
 
 impl State {
     fn new(window: Arc<Window>) -> Self {
-        Self { window }
+        let instance = wgpu::Instance::new(&wgpu::InstanceDescriptor::default());
+        Self { window, instance }
     }
 
-    fn resize(&mut self, _width: u32, _height: u32) {
-    }
+    fn resize(&mut self, _width: u32, _height: u32) {}
 
     fn render(&mut self) {
         self.window.request_redraw();
@@ -74,11 +75,13 @@ impl ApplicationHandler for App {
                 }
             }
             WindowEvent::KeyboardInput {
-                event: KeyEvent { // this pattern is a filter that triggers if the Escape key is pressed ONLY
-                    state: ElementState::Pressed,
-                    logical_key: Key::Named(NamedKey::Escape),
-                    ..
-                },
+                event:
+                    KeyEvent {
+                        // this pattern is a filter that triggers if the Escape key is pressed ONLY
+                        state: ElementState::Pressed,
+                        logical_key: Key::Named(NamedKey::Escape),
+                        ..
+                    },
                 ..
             } => {
                 println!("Escape pressed - quitting!");
