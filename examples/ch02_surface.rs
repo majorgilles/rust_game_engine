@@ -1,3 +1,12 @@
+//! Chapter 2: drawing a clear color into a window via wgpu.
+//!
+//! The wgpu pipeline at a glance:
+//!
+//!   Window  ─►  Surface  ─►  Adapter (a GPU)  ─►  Device + Queue
+//!
+//! Each frame we acquire a texture from the Surface, record a render pass
+//! that clears it to a color, submit the commands, then present the frame.
+
 use pollster::FutureExt;
 use std::iter::once;
 use std::sync::Arc;
@@ -11,30 +20,57 @@ use winit::window::{Window, WindowId};
 const WIDTH: u32 = 1280;
 const HEIGHT: u32 = 720;
 
+/// All long-lived rendering state. Built once in `resumed`, lives until exit.
 struct State {
+    /// The OS window. `Arc` because the Surface also keeps a handle to it —
+    /// shared ownership is how we promise wgpu that the window outlives the surface.
     window: Arc<Window>,
+
+    /// Entry point to wgpu. Used to enumerate GPUs and to create surfaces.
+    /// Made once at startup; nothing else holds state here.
     instance: wgpu::Instance,
-    // A Surface is the bridge between your Window and wgpu
-    surface: wgpu::Surface<'static>, // 'static == this surface holds something that lives forever
-    // An Adapter is a handle to a specific physical GPU on the machine
+
+    /// The drawable region of the window from wgpu's point of view —
+    /// the bridge between the OS window and the GPU. We acquire a texture
+    /// from it each frame, draw into it, and present it.
+    ///
+    /// The `'static` says the surface's borrowed window lives forever, which
+    /// is true because `Arc<Window>` keeps it alive as long as anyone holds one.
+    surface: wgpu::Surface<'static>,
+
+    /// Handle to a specific physical GPU on the machine.
+    /// Describes capabilities and is used to open a device; doesn't run commands itself.
     adapter: wgpu::Adapter,
-    // Adapter -- your open connection to the GPU. Used to create resources (buffers, textures, pipelines)
+
+    /// Open connection to the GPU. Used to *create* resources
+    /// (buffers, textures, pipelines, command encoders).
     device: wgpu::Device,
-    // Queue — where you submit commands for the GPU to execute
+
+    /// Command submission channel. We hand it recorded command buffers and
+    /// the GPU executes them in order. Submitting is how work actually happens.
     queue: wgpu::Queue,
+
+    /// Size, pixel format, and present settings for the Surface.
+    /// Re-applied via `surface.configure` whenever the window resizes.
     surface_configuration: wgpu::SurfaceConfiguration,
 }
 
 impl State {
+    /// Build all wgpu state. Async work (adapter/device requests) is run synchronously
+    /// here via `pollster`'s `block_on`, since this example has no async runtime.
     fn new(window: Arc<Window>) -> Self {
-        // InstanceDescriptor::default() lets wgpu pick whichever backend the OS prefers
+        // `default()` lets wgpu pick whichever backend the OS prefers (Vulkan/DX12/Metal).
         let instance_descriptor = wgpu::InstanceDescriptor::default();
         let instance = wgpu::Instance::new(&instance_descriptor);
 
+        // Cloning an Arc just bumps a refcount; surface and State both end up
+        // holding the same window.
         let surface = instance
-            .create_surface(window.clone()) // .clone() bumps the reference count. Surface gets handle to the window.
+            .create_surface(window.clone())
             .expect("Failed to create surface");
 
+        // Pick a GPU. `compatible_surface` ensures the chosen GPU can actually
+        // render to *this* window — important on dual-GPU laptops.
         let adapter = instance
             .request_adapter(&wgpu::RequestAdapterOptions {
                 power_preference: wgpu::PowerPreference::HighPerformance,
@@ -44,6 +80,8 @@ impl State {
             .block_on()
             .expect("Failed to find an appropriate adapter");
 
+        // Open a connection to that GPU. We declare up-front what we need;
+        // wgpu fails *now* if the GPU can't deliver, instead of mysteriously later.
         let device_descriptor = wgpu::DeviceDescriptor {
             label: Some("Main Device"),
             required_features: wgpu::Features::empty(),
@@ -57,19 +95,24 @@ impl State {
             .block_on()
             .expect("Failed to create device.");
 
+        // Configure the surface: tell it how big, what pixel format, and how to time frames.
         let size = window.inner_size();
         let surface_capabilities = surface.get_capabilities(&adapter);
 
+        // Prefer an sRGB format so a value like 0.5 renders as a perceptual mid-gray.
+        // Linear formats would look too dark on the monitor without manual gamma correction.
         let surface_format = surface_capabilities
             .formats
             .iter()
             .copied()
-            .find(|f| f.is_srgb()) // sRGB is the color space your monitor expects. Picking it means colors look right without us doing math.
+            .find(|f| f.is_srgb())
             .unwrap_or(surface_capabilities.formats[0]);
 
         let surface_configuration = wgpu::SurfaceConfiguration {
+            // RENDER_ATTACHMENT == "we will draw into this surface's textures."
             usage: wgpu::TextureUsages::RENDER_ATTACHMENT,
             format: surface_format,
+            // Floor at 1: a 0-sized surface is invalid, and minimized windows can report 0.
             width: size.width.max(1),
             height: size.height.max(1),
             present_mode: surface_capabilities.present_modes[0],
