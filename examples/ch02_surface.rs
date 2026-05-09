@@ -6,6 +6,51 @@
 //!
 //! Each frame we acquire a texture from the Surface, record a render pass
 //! that clears it to a color, submit the commands, then present the frame.
+//!
+//! # How does an image actually end up on the screen?
+//!
+//! The high-level story: the CPU records a list of commands and hands them
+//! to the GPU. The GPU runs them in parallel, writing colors into a texture.
+//! The OS then "presents" that texture to the monitor in sync with the display.
+//!
+//! ## Recommended reading (in order, roughly easiest to deepest)
+//!
+//! - **Learn Wgpu — Tutorial 2: The Surface**
+//!   <https://sotrh.github.io/learn-wgpu/beginner/tutorial2-surface/>
+//!   The chapter this example follows. Plain-English walkthrough of every
+//!   wgpu type used here.
+//!
+//! - **WebGPU Fundamentals — "What is WebGPU?" and "Fundamentals"**
+//!   <https://webgpufundamentals.org/webgpu/lessons/webgpu-fundamentals.html>
+//!   wgpu is Rust's implementation of the WebGPU spec. This is the gentlest
+//!   intro to the mental model (commands, passes, attachments, presenting).
+//!
+//! - **Fabien Sanglard — "A trip through the Graphics Pipeline" (short version)**
+//!   <https://fabiensanglard.net/doom3/renderer.php>
+//!   Concrete tour of how a real renderer (Doom 3) turns scene data into pixels.
+//!
+//! - **Ryg's "A trip through the Graphics Pipeline 2011" series**
+//!   <https://fgiesen.wordpress.com/2011/07/09/a-trip-through-the-graphics-pipeline-2011-index/>
+//!   The classic deep dive. Explains what GPUs *actually do* between submit
+//!   and present — command processors, rasterization, framebuffers, vsync.
+//!   Long, but pieces fall into place.
+//!
+//! - **The Book of Shaders — "What is a shader?"**
+//!   <https://thebookofshaders.com/01/>
+//!   Background for the next chapter. We're only clearing here; from ch3
+//!   onward the GPU runs *your* code (shaders) per pixel.
+//!
+//! ## Glossary mapping (this file → industry terms)
+//!
+//! | This file              | What it's called elsewhere                   |
+//! |------------------------|----------------------------------------------|
+//! | `Surface`              | swapchain (D3D/Vulkan), drawable (Metal)     |
+//! | `frame.texture`        | back buffer / swapchain image                |
+//! | `frame.present()`      | swap / page flip                             |
+//! | `CommandEncoder`       | command buffer builder                       |
+//! | `Queue::submit`        | enqueue command buffer for GPU execution     |
+//! | `RenderPass`           | a draw-into-these-targets scope              |
+//! | `LoadOp::Clear` + Store| "clear-on-load" attachment behavior          |
 
 use pollster::FutureExt;
 use std::iter::once;
