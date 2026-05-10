@@ -165,7 +165,7 @@ impl State {
         };
         surface.configure(&device, &surface_configuration);
 
-        let mouse_position = PhysicalPosition::new(0.0,0.0);
+        let mouse_position = PhysicalPosition::new(0.0, 0.0);
 
         Self {
             window,
