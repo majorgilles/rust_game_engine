@@ -330,7 +330,7 @@ impl State {
             };
             let mut render_pass = encoder.begin_render_pass(&descriptor);
             render_pass.set_pipeline(&self.render_pipeline);
-            render_pass.draw(0..3, 0..1); // we hard code vertices 0, 1, 2
+            render_pass.draw(0..3, 0..1); // we hard code vertices 0, 1, 2, and we draw 1 instance, 1 triangle
         }
 
         // 3. Submit. The queue runs the recorded commands on the GPU.
