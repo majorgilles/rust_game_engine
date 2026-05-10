@@ -13,32 +13,35 @@
 //! to the GPU. The GPU runs them in parallel, writing colors into a texture.
 //! The OS then "presents" that texture to the monitor in sync with the display.
 //!
-//! ## Recommended reading (in order, roughly easiest to deepest)
+//! ## Recommended reading (start here)
 //!
 //! - **Learn Wgpu — Tutorial 2: The Surface**
 //!   <https://sotrh.github.io/learn-wgpu/beginner/tutorial2-surface/>
 //!   The chapter this example follows. Plain-English walkthrough of every
 //!   wgpu type used here.
 //!
-//! - **WebGPU Fundamentals — "What is WebGPU?" and "Fundamentals"**
+//! - **WebGPU Fundamentals — "Fundamentals"**
 //!   <https://webgpufundamentals.org/webgpu/lessons/webgpu-fundamentals.html>
 //!   wgpu is Rust's implementation of the WebGPU spec. This is the gentlest
 //!   intro to the mental model (commands, passes, attachments, presenting).
 //!
-//! - **Fabien Sanglard — "A trip through the Graphics Pipeline" (short version)**
-//!   <https://fabiensanglard.net/doom3/renderer.php>
-//!   Concrete tour of how a real renderer (Doom 3) turns scene data into pixels.
+//! - **How a computer turns triangles into pixels (Computerphile, ~10 min video)**
+//!   <https://www.youtube.com/watch?v=C8YtdC8mxTU>
+//!   Visual, beginner-friendly explanation of rasterization — how the GPU
+//!   decides which pixels a shape covers and what color each one gets.
 //!
-//! - **Ryg's "A trip through the Graphics Pipeline 2011" series**
-//!   <https://fgiesen.wordpress.com/2011/07/09/a-trip-through-the-graphics-pipeline-2011-index/>
-//!   The classic deep dive. Explains what GPUs *actually do* between submit
-//!   and present — command processors, rasterization, framebuffers, vsync.
-//!   Long, but pieces fall into place.
+//! - **MDN — WebGPU API overview**
+//!   <https://developer.mozilla.org/en-US/docs/Web/API/WebGPU_API>
+//!   What WebGPU is, why it exists, how it differs from WebGL. Same
+//!   concepts as wgpu, just expressed in JavaScript.
 //!
-//! - **The Book of Shaders — "What is a shader?"**
-//!   <https://thebookofshaders.com/01/>
-//!   Background for the next chapter. We're only clearing here; from ch3
-//!   onward the GPU runs *your* code (shaders) per pixel.
+//! - **`wgpu` crate — "Getting Started" in the README**
+//!   <https://github.com/gfx-rs/wgpu#getting-started>
+//!   How wgpu (the Rust crate) maps onto the WebGPU spec, which platforms
+//!   it supports, and which native API it uses on each.
+//!
+//! For deeper dives (graphics pipeline internals, real-engine renderers,
+//! shader programming), see `FURTHER_READING.md` at the project root.
 //!
 //! ## Glossary mapping (this file → industry terms)
 //!
