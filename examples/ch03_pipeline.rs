@@ -1,4 +1,4 @@
-//! Chapter 2: drawing a clear color into a window via wgpu.
+//! Chapter 3: drawing a single triangle via a render pipeline.
 //!
 //! The wgpu pipeline at a glance:
 //!
@@ -15,45 +15,39 @@
 //!
 //! ## Recommended reading (start here)
 //!
-//! - **Learn Wgpu — Tutorial 2: The Surface**
-//!   <https://sotrh.github.io/learn-wgpu/beginner/tutorial2-surface/>
-//!   The chapter this example follows. Plain-English walkthrough of every
-//!   wgpu type used here.
+//! - **Learn Wgpu — Tutorial 3: The Pipeline**
+//!   <https://sotrh.github.io/learn-wgpu/beginner/tutorial3-pipeline/>
+//!   The chapter this example follows. Walks through writing the shader,
+//!   building a render pipeline, and issuing the draw call for one triangle.
 //!
-//! - **WebGPU Fundamentals — "Fundamentals"**
-//!   <https://webgpufundamentals.org/webgpu/lessons/webgpu-fundamentals.html>
-//!   wgpu is Rust's implementation of the WebGPU spec. This is the gentlest
-//!   intro to the mental model (commands, passes, attachments, presenting).
+//! - **WebGPU Fundamentals — "Inter-stage variables"**
+//!   <https://webgpufundamentals.org/webgpu/lessons/webgpu-inter-stage-variables.html>
+//!   Beginner intro to *what a vertex shader and fragment shader actually do*,
+//!   and how data flows from one to the other. Same concepts as wgpu, easier prose.
 //!
-//! - **How a computer turns triangles into pixels (Computerphile, ~10 min video)**
-//!   <https://www.youtube.com/watch?v=C8YtdC8mxTU>
-//!   Visual, beginner-friendly explanation of rasterization — how the GPU
-//!   decides which pixels a shape covers and what color each one gets.
+//! - **WGSL Tour (interactive)**
+//!   <https://google.github.io/tour-of-wgsl/>
+//!   Bite-sized lessons on WGSL, the shader language we're about to write.
+//!   Skim "Hello WGSL" and "Functions" — that's enough for this chapter.
 //!
-//! - **MDN — WebGPU API overview**
-//!   <https://developer.mozilla.org/en-US/docs/Web/API/WebGPU_API>
-//!   What WebGPU is, why it exists, how it differs from WebGL. Same
-//!   concepts as wgpu, just expressed in JavaScript.
-//!
-//! - **`wgpu` crate — "Getting Started" in the README**
-//!   <https://github.com/gfx-rs/wgpu#getting-started>
-//!   How wgpu (the Rust crate) maps onto the WebGPU spec, which platforms
-//!   it supports, and which native API it uses on each.
+//! - **wgpu examples — `hello_triangle`**
+//!   <https://github.com/gfx-rs/wgpu/tree/trunk/examples/features/src/hello_triangle>
+//!   The official wgpu "draw one triangle" example. Useful as a second
+//!   reference when our code feels unclear — small enough to read end-to-end.
 //!
 //! For deeper dives (graphics pipeline internals, real-engine renderers,
 //! shader programming), see `FURTHER_READING.md` at the project root.
 //!
 //! ## Glossary mapping (this file → industry terms)
 //!
-//! | This file              | What it's called elsewhere                   |
-//! |------------------------|----------------------------------------------|
-//! | `Surface`              | swapchain (D3D/Vulkan), drawable (Metal)     |
-//! | `frame.texture`        | back buffer / swapchain image                |
-//! | `frame.present()`      | swap / page flip                             |
-//! | `CommandEncoder`       | command buffer builder                       |
-//! | `Queue::submit`        | enqueue command buffer for GPU execution     |
-//! | `RenderPass`           | a draw-into-these-targets scope              |
-//! | `LoadOp::Clear` + Store| "clear-on-load" attachment behavior          |
+//! | This file                    | What it's called elsewhere                   |
+//! |------------------------------|----------------------------------------------|
+//! | `ShaderModule`               | compiled shader / shader blob                |
+//! | `RenderPipeline`             | pipeline state object (PSO in D3D)           |
+//! | vertex shader (`vs_main`)    | vertex stage / vertex program                |
+//! | fragment shader (`fs_main`)  | fragment stage / pixel shader (D3D)          |
+//! | `@builtin(position)`         | clip-space position / `gl_Position` in GLSL  |
+//! | `draw(0..3, 0..1)`           | non-indexed draw call                        |
 
 use pollster::FutureExt;
 use std::iter::once;
