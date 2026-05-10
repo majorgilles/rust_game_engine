@@ -90,6 +90,10 @@ struct State {
 
     /// The mouse position captured in window_event()
     mouse_position: PhysicalPosition<f64>,
+
+    /// The compiled shader + pipeline settings the GPU uses to draw our triangle.
+    /// Built once in `new`, bound at the start of every render pass.
+    render_pipeline: wgpu::RenderPipeline,
 }
 
 impl State {
@@ -161,6 +165,66 @@ impl State {
 
         let mouse_position = PhysicalPosition::new(0.0, 0.0);
 
+        // Compile the WGSL into a shader module the GPU can rn.
+        // `include_str!` reads the .wgsl file at compile time and embeds it as a string.
+        let shader = device.create_shader_module(wgpu::ShaderModuleDescriptor {
+            label: Some("Triange Shader"),
+            source: wgpu::ShaderSource::Wgsl(include_str!("ch03_pipeline.wgsl").into()), // into() converts &str from include_str! to Cow that Wgsl(...) expects
+        });
+
+        // A pipeline layout declares what *resources* (buffers, textures, samplers) the shader will
+        // read from. Our shader reads nothing yet, it computes positions from `vertex_index` and
+        // outputs a hardcoded color, so the layout is empty.
+        let pipeline_layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
+            label: Some("Triangle Pipeline Layout"),
+            bind_group_layouts: &[], // groups of resources
+            push_constant_ranges: &[],
+        });
+        // The render pipeline ties everything together: which shader runs at the vertex
+        // stage, which runs at the fragment stage, what shape the input is, what the
+        // output color format is, and how triangles are turned into pixels.
+        let render_pipeline = device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
+            label: Some("Triangle Pipeline"),
+            layout: Some(&pipeline_layout),
+
+            // ---- Vertex stage ----
+            vertex: wgpu::VertexState {
+                module: &shader,
+                entry_point: Some("vs_main"),
+                buffers: &[],
+                compilation_options: wgpu::PipelineCompilationOptions::default(),
+            },
+
+            // ---- Fragment stage ----
+            fragment: Some(wgpu::FragmentState {
+                module: &shader,
+                entry_point: Some("fs_main"),
+                targets: &[Some(wgpu::ColorTargetState {
+                    format: surface_configuration.format,
+                    blend: Some(wgpu::BlendState::REPLACE),
+                    write_mask: wgpu::ColorWrites::ALL,
+                })],
+                compilation_options: wgpu::PipelineCompilationOptions::default(),
+            }),
+
+            // ---- How triangles get rasterized ----
+            primitive: wgpu::PrimitiveState {
+                topology: wgpu::PrimitiveTopology::TriangleList,
+                strip_index_format: None,
+                front_face: wgpu::FrontFace::Ccw,
+                cull_mode: Some(wgpu::Face::Back),
+                polygon_mode: wgpu::PolygonMode::Fill,
+                unclipped_depth: false,
+                conservative:false,
+            },
+
+            // no depth buffer or MSAA yet - keep it minimal
+            depth_stencil: None,
+            multisample: wgpu::MultisampleState::default(),
+            multiview: None,
+            cache: None,
+        });
+
         Self {
             window,
             surface,
@@ -168,6 +232,7 @@ impl State {
             queue,
             surface_configuration,
             mouse_position,
+            render_pipeline,
         }
     }
 
