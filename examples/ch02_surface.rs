@@ -140,7 +140,6 @@ impl State {
             .expect("Failed to create device.");
 
         // Configure the surface: tell it how big, what pixel format, and how to time frames.
-        let size = window.inner_size();
         let surface_capabilities = surface.get_capabilities(&adapter);
 
         // Prefer an sRGB format so a value like 0.5 renders as a perceptual mid-gray.
@@ -152,6 +151,7 @@ impl State {
             .find(|f| f.is_srgb())
             .unwrap_or(surface_capabilities.formats[0]);
 
+        let size = window.inner_size();
         let surface_configuration = wgpu::SurfaceConfiguration {
             // RENDER_ATTACHMENT == "we will draw into this surface's textures."
             usage: wgpu::TextureUsages::RENDER_ATTACHMENT,
