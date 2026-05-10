@@ -59,7 +59,7 @@ use pollster::FutureExt;
 use std::iter::once;
 use std::sync::Arc;
 use winit::application::ApplicationHandler;
-use winit::dpi::PhysicalSize;
+use winit::dpi::{PhysicalPosition, PhysicalSize};
 use winit::event::{ElementState, KeyEvent, WindowEvent};
 use winit::event_loop::{ActiveEventLoop, EventLoop};
 use winit::keyboard::{Key, NamedKey};
@@ -93,6 +93,9 @@ struct State {
     /// Size, pixel format, and present settings for the Surface.
     /// Re-applied via `surface.configure` whenever the window resizes.
     surface_configuration: wgpu::SurfaceConfiguration,
+
+    /// The mouse position captureed in window_event()
+    mouse_position: PhysicalPosition<f64>,
 }
 
 impl State {
@@ -162,12 +165,15 @@ impl State {
         };
         surface.configure(&device, &surface_configuration);
 
+        let mouse_position = PhysicalPosition::new(0.0,0.0);
+
         Self {
             window,
             surface,
             device,
             queue,
             surface_configuration,
+            mouse_position,
         }
     }
 
@@ -231,8 +237,8 @@ impl State {
             // whether to keep what we wrote. Clear-on-load + Store == "wipe to this color, keep result."
             let operations = wgpu::Operations {
                 load: wgpu::LoadOp::Clear(wgpu::Color {
-                    r: 0.1,
-                    g: 0.2,
+                    r: self.mouse_position.x / WIDTH as f64,
+                    g: self.mouse_position.y / HEIGHT as f64,
                     b: 0.3,
                     a: 1.0,
                 }),
@@ -323,6 +329,11 @@ impl ApplicationHandler for App {
                     },
                 ..
             } => event_loop.exit(),
+            WindowEvent::CursorMoved { position, .. } => {
+                if let Some(state) = self.state.as_mut() {
+                    state.mouse_position = position;
+                }
+            }
             _ => {}
         }
     }
