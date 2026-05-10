@@ -14,6 +14,8 @@ fn vs_main(@builtin(vertex_index) in_vertex_index: u32) -> @builtin(position) ve
 // "Fragment" is the GPU's word for "candidate pixel"; you can read them as the same thing here
 @fragment
 fn fs_main(@builtin(position) frag_pos: vec4<f32>) -> @location(0) vec4<f32> {
-    // TODO (next step): split left/right by frag_pos.x
-    return vec4<f32>(1.0, 0.0, 0.0, 1.0);
+    if frag_pos.x < 1280.0 / 2.0 { // for the moment we hardcode width !!!
+        return vec4<f32>(1.0, 0.0, 0.0, 1.0);
+    }
+    return vec4<f32>(0.0, 1.0, 0.0, 1.0);
 }
