@@ -82,10 +82,6 @@ struct State {
     /// is true because `Arc<Window>` keeps it alive as long as anyone holds one.
     surface: wgpu::Surface<'static>,
 
-    /// Handle to a specific physical GPU on the machine.
-    /// Describes capabilities and is used to open a device; doesn't run commands itself.
-    adapter: wgpu::Adapter,
-
     /// Open connection to the GPU. Used to *create* resources
     /// (buffers, textures, pipelines, command encoders).
     device: wgpu::Device,
@@ -169,7 +165,6 @@ impl State {
         Self {
             window,
             surface,
-            adapter,
             device,
             queue,
             surface_configuration,
