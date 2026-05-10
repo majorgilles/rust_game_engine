@@ -101,9 +101,6 @@ struct State {
     /// Re-applied via `surface.configure` whenever the window resizes.
     surface_configuration: wgpu::SurfaceConfiguration,
 
-    /// The mouse position captured in window_event()
-    mouse_position: PhysicalPosition<f64>,
-
     /// The compiled shader + pipeline settings the GPU uses to draw our triangle.
     /// Built once in `new`, bound at the start of every render pass.
     render_pipeline: wgpu::RenderPipeline,
@@ -176,8 +173,6 @@ impl State {
         };
         surface.configure(&device, &surface_configuration);
 
-        let mouse_position = PhysicalPosition::new(0.0, 0.0);
-
         // Compile the WGSL into a shader module the GPU can run.
         // `include_str!` reads the .wgsl file at compile time and embeds it as a string.
         let shader = device.create_shader_module(wgpu::ShaderModuleDescriptor {
@@ -245,7 +240,6 @@ impl State {
             device,
             queue,
             surface_configuration,
-            mouse_position,
             render_pipeline,
         }
     }
@@ -308,12 +302,11 @@ impl State {
 
             // `load` says what's already in the attachment when the pass starts; `store` says
             // whether to keep what we wrote. Clear-on-load + Store == "wipe to this color, keep result."
-            let config = &self.surface_configuration;
             let operations = wgpu::Operations {
                 load: wgpu::LoadOp::Clear(wgpu::Color {
-                    r: self.mouse_position.x / config.width as f64,
-                    g: self.mouse_position.y / config.height as f64,
-                    b: 0.3,
+                    r: 0.0,
+                    g: 0.0,
+                    b: 0.0,
                     a: 1.0,
                 }),
                 store: wgpu::StoreOp::Store,
@@ -405,11 +398,6 @@ impl ApplicationHandler for App {
                     },
                 ..
             } => event_loop.exit(),
-            WindowEvent::CursorMoved { position, .. } => {
-                if let Some(state) = self.state.as_mut() {
-                    state.mouse_position = position;
-                }
-            }
             _ => {}
         }
     }
