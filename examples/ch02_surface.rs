@@ -94,7 +94,7 @@ struct State {
     /// Re-applied via `surface.configure` whenever the window resizes.
     surface_configuration: wgpu::SurfaceConfiguration,
 
-    /// The mouse position captureed in window_event()
+    /// The mouse position captured in window_event()
     mouse_position: PhysicalPosition<f64>,
 }
 
@@ -235,10 +235,11 @@ impl State {
 
             // `load` says what's already in the attachment when the pass starts; `store` says
             // whether to keep what we wrote. Clear-on-load + Store == "wipe to this color, keep result."
+            let config = &self.surface_configuration;
             let operations = wgpu::Operations {
                 load: wgpu::LoadOp::Clear(wgpu::Color {
-                    r: self.mouse_position.x / WIDTH as f64,
-                    g: self.mouse_position.y / HEIGHT as f64,
+                    r: self.mouse_position.x / config.width as f64,
+                    g: self.mouse_position.y / config.height as f64,
                     b: 0.3,
                     a: 1.0,
                 }),
