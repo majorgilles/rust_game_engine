@@ -74,10 +74,6 @@ struct State {
     /// shared ownership is how we promise wgpu that the window outlives the surface.
     window: Arc<Window>,
 
-    /// Entry point to wgpu. Used to enumerate GPUs and to create surfaces.
-    /// Made once at startup; nothing else holds state here.
-    instance: wgpu::Instance,
-
     /// The drawable region of the window from wgpu's point of view —
     /// the bridge between the OS window and the GPU. We acquire a texture
     /// from it each frame, draw into it, and present it.
@@ -172,7 +168,6 @@ impl State {
 
         Self {
             window,
-            instance,
             surface,
             adapter,
             device,
