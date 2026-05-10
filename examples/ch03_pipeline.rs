@@ -13,6 +13,19 @@
 //! to the GPU. The GPU runs them in parallel, writing colors into a texture.
 //! The OS then "presents" that texture to the monitor in sync with the display.
 //!
+//! # Why building a pipeline feels verbose
+//!
+//! A render pipeline is the GPU's promise that *everything matches*:
+//! vertex shader output → fragment shader input, fragment output format →
+//! render target format, vertex buffer layout → vertex shader inputs, and
+//! so on. If any of those don't line up, wgpu rejects the pipeline at
+//! creation time with a clear message.
+//!
+//! That up-front strictness is why a pipeline descriptor has so many fields:
+//! it's catching mistakes that would otherwise show up later as a black
+//! screen, garbled colors, or a mysterious crash with no explanation.
+//! Verbose now, debuggable forever.
+//!
 //! ## Recommended reading (start here)
 //!
 //! - **Learn Wgpu — Tutorial 3: The Pipeline**
@@ -165,10 +178,10 @@ impl State {
 
         let mouse_position = PhysicalPosition::new(0.0, 0.0);
 
-        // Compile the WGSL into a shader module the GPU can rn.
+        // Compile the WGSL into a shader module the GPU can run.
         // `include_str!` reads the .wgsl file at compile time and embeds it as a string.
         let shader = device.create_shader_module(wgpu::ShaderModuleDescriptor {
-            label: Some("Triange Shader"),
+            label: Some("Triangle Shader"),
             source: wgpu::ShaderSource::Wgsl(include_str!("ch03_pipeline.wgsl").into()), // into() converts &str from include_str! to Cow that Wgsl(...) expects
         });
 
@@ -180,6 +193,7 @@ impl State {
             bind_group_layouts: &[], // groups of resources
             push_constant_ranges: &[],
         });
+
         // The render pipeline ties everything together: which shader runs at the vertex
         // stage, which runs at the fragment stage, what shape the input is, what the
         // output color format is, and how triangles are turned into pixels.
@@ -191,7 +205,7 @@ impl State {
             vertex: wgpu::VertexState {
                 module: &shader,
                 entry_point: Some("vs_main"),
-                buffers: &[],
+                buffers: &[], // "no vertex buffers." We don't pass any vertex data from the CPU
                 compilation_options: wgpu::PipelineCompilationOptions::default(),
             },
 
@@ -200,27 +214,27 @@ impl State {
                 module: &shader,
                 entry_point: Some("fs_main"),
                 targets: &[Some(wgpu::ColorTargetState {
-                    format: surface_configuration.format,
-                    blend: Some(wgpu::BlendState::REPLACE),
-                    write_mask: wgpu::ColorWrites::ALL,
+                    format: surface_configuration.format,  // must match the surface's pixel format. If they disagree, the pipeline is invalid: the shader writes one format, the screen expects another
+                    blend: Some(wgpu::BlendState::REPLACE), // "the fragment color overwrites whatever was there." The alternative is alpha-blending (semi-transparency), which we don't need
+                    write_mask: wgpu::ColorWrites::ALL,  // write all four channels (RGBA). You could mask out individual channels for special effects
                 })],
                 compilation_options: wgpu::PipelineCompilationOptions::default(),
             }),
 
             // ---- How triangles get rasterized ----
             primitive: wgpu::PrimitiveState {
-                topology: wgpu::PrimitiveTopology::TriangleList,
+                topology: wgpu::PrimitiveTopology::TriangleList,  // "every 3 consecutive vertices form a triangle." Other options: LineList, PointList, TriangleStrip. With 3 vertices and TriangleList, we get exactly one triangle.
                 strip_index_format: None,
-                front_face: wgpu::FrontFace::Ccw,
-                cull_mode: Some(wgpu::Face::Back),
-                polygon_mode: wgpu::PolygonMode::Fill,
+                front_face: wgpu::FrontFace::Ccw, // vertices listed in counter-clockwise order = the front of the triangle. (Ours go bottom-right → top → bottom-left, which is CCW when viewed normally.)
+                cull_mode: Some(wgpu::Face::Back), // "throw away triangles whose back side is facing the camera." Saves work; harmless when only one triangle.
+                polygon_mode: wgpu::PolygonMode::Fill, // fill the inside. Line would draw only edges (wireframe)
                 unclipped_depth: false,
                 conservative:false,
             },
 
             // no depth buffer or MSAA yet - keep it minimal
-            depth_stencil: None,
-            multisample: wgpu::MultisampleState::default(),
+            depth_stencil: None,  // no depth testing yet. We'll add it when we draw 3D meshes that overlap
+            multisample: wgpu::MultisampleState::default(), // anti-aliasing off (samples = 1). Default is fine
             multiview: None,
             cache: None,
         });
