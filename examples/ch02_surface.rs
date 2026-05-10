@@ -199,7 +199,7 @@ impl State {
     ///   3. **Submit** — hand the recorded commands to the queue.
     ///   4. **Present** — tell the OS to display the finished frame.
     fn render(&mut self) {
-        // 1. Acquire. The surface hands us the next image to render into.
+        // 1. Acquire. The surface hands us the next texture to render into.
         // Lost/Outdated typically follow a resize or wake-from-sleep — recover by reconfiguring
         // and dropping this frame.
         let frame = match self.surface.get_current_texture() {
@@ -264,7 +264,8 @@ impl State {
         }
 
         // 3. Submit. The queue runs the recorded commands on the GPU.
-        self.queue.submit(once(encoder.finish()));
+        let command_buffer = encoder.finish();
+        self.queue.submit(once(command_buffer));
         // 4. Present. Without this, the GPU drew but the OS never shows it.
         frame.present();
         // Ask winit for another RedrawRequested so we keep rendering continuously.
