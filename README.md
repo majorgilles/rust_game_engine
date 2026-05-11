@@ -14,7 +14,7 @@ The engine is the *excuse* — the actual goal is to understand how engines work
 
 Work through every Beginner and Intermediate chapter of Learn Wgpu. One issue per chapter. For each chapter:
 
-1. Type along with the tutorial in `examples/chNN_topic.rs`.
+1. Keep the current/reference chapter implementation in `src/`.
 2. Implement a small **variation** that proves the concept, not just recognition of it.
 
 By the end you have a hand-rolled 3D renderer with model loading, lighting, normal mapping, a proper camera, and HDR tone mapping.
@@ -45,7 +45,7 @@ Build an original 3D Pong game on top of the renderer. Five issues:
 ## Working agreement
 
 - **Pace:** type-along + small variation per chapter. Variations are where real learning happens.
-- **Repo layout:** `examples/chNN_topic.rs` per chapter, self-contained early. `src/lib.rs` only grows when a pattern has appeared three times — rule of three triggers extraction, not vibes.
+- **Repo layout:** one evolving codebase in `src/`. The latest chapter is the reference implementation; older chapter snapshots are not kept in separate runnable targets. Extract modules/shared helpers when they make the single codebase clearer.
 - **Side artifact:** [`IDEAS.md`](IDEAS.md) — running list of "this could be simpler" / "wonder how multiple objects would work" notes during Phase 1. Becomes the input for Phase 2.
 
 ## Time estimates
@@ -87,12 +87,10 @@ At a sustained ~10 hours/week, that's roughly **3–4.5 months** to v1. At ~5 ho
 - `winit` for windowing
 - Other crates introduced as the tutorial calls for them
 
-## Running examples
+## Running
 
 ```sh
-cargo run --example ch02_surface
-cargo run --example ch04_buffers
-# ...etc.
+cargo run
 ```
 
-Each example is currently self-contained. Shared helpers will appear in `src/lib.rs` only after the same pattern has appeared three times across examples.
+The app in `src/` is the current reference implementation and evolves chapter by chapter.

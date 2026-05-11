@@ -1,3 +1,8 @@
+// Current main shader.
+//
+// Vertex inputs come from the CPU-side `mesh::Vertex` layout. Keep the
+// `@location` values here synchronized with `Vertex::desc()` in `src/mesh.rs`.
+//
 // Chapter 4 shader: vertex inputs from a vertex buffer.
 //
 // Differs from ch03 in two ways:
