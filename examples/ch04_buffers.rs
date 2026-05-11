@@ -1,72 +1,88 @@
-//! Chapter 3: drawing a single triangle via a render pipeline.
+//! Chapter 4: vertex buffers and index buffers — feeding shape data from the CPU.
 //!
-//! The wgpu pipeline at a glance:
+//! In ch03 our triangle's positions and colors were *baked into the shader*.
+//! That doesn't scale: a real mesh has thousands of vertices, and we want
+//! Rust code (or a file on disk) to decide what they are. This chapter
+//! introduces **buffers**: blobs of bytes the GPU can read.
 //!
-//!   Window  ─►  Surface  ─►  Adapter (a GPU)  ─►  Device + Queue
+//! Two new buffers show up here:
 //!
-//! Each frame we acquire a texture from the Surface, record a render pass
-//! that clears it to a color, submit the commands, then present the frame.
+//!   - **Vertex buffer** — one entry per corner of the shape. We describe its
+//!     layout (stride, attributes) so the vertex shader knows how to unpack it.
+//!   - **Index buffer** — a list of vertex indices, so we can reuse vertices
+//!     across triangles instead of duplicating them. A pentagon = 5 vertices
+//!     and 9 indices, not 9 vertices.
 //!
-//! # How does an image actually end up on the screen?
+//! # The pipeline, updated
 //!
-//! The high-level story: the CPU records a list of commands and hands them
-//! to the GPU. The GPU runs them in parallel, writing colors into a texture.
-//! The OS then "presents" that texture to the monitor in sync with the display.
+//!   CPU `&[Vertex]`  ─►  `create_buffer_init`  ─►  GPU buffer
+//!         │
+//!         └─►  `Vertex::desc()` (stride + attributes)  ─►  pipeline.vertex.buffers
 //!
-//! # Why building a pipeline feels verbose
+//!   render pass:
+//!     set_pipeline → set_vertex_buffer(0, ..) → set_index_buffer(.., Uint16)
+//!                  → draw_indexed(0..num_indices, 0, 0..1)
 //!
-//! A render pipeline is the GPU's promise that *everything matches*:
-//! vertex shader output → fragment shader input, fragment output format →
-//! render target format, vertex buffer layout → vertex shader inputs, and
-//! so on. If any of those don't line up, wgpu rejects the pipeline at
-//! creation time with a clear message.
+//! # Why the layout description is separate from the data
 //!
-//! That up-front strictness is why a pipeline descriptor has so many fields:
-//! it's catching mistakes that would otherwise show up later as a black
-//! screen, garbled colors, or a mysterious crash with no explanation.
-//! Verbose now, debuggable forever.
+//! The buffer itself is just bytes. The pipeline needs to know *how to read
+//! those bytes*: how many bytes per vertex (`array_stride`), and where each
+//! field starts (`offset`) and what type it is (`format`). That's
+//! `VertexBufferLayout`. Get the offsets wrong and you'll see garbled
+//! geometry — there's no runtime check that "this is a position."
+//!
+//! # `bytemuck` in one paragraph
+//!
+//! `bytemuck::cast_slice(&VERTICES)` reinterprets `&[Vertex]` as `&[u8]`
+//! without copying. That's only safe if `Vertex` has no padding surprises
+//! and no pointer-like fields — which is what `#[repr(C)]` plus the
+//! `Pod` + `Zeroable` derives promise the compiler.
 //!
 //! ## Recommended reading (start here)
 //!
-//! - **Learn Wgpu — Tutorial 3: The Pipeline**
-//!   <https://sotrh.github.io/learn-wgpu/beginner/tutorial3-pipeline/>
-//!   The chapter this example follows. Walks through writing the shader,
-//!   building a render pipeline, and issuing the draw call for one triangle.
+//! - **Learn Wgpu — Tutorial 4: Buffers and Indices**
+//!   <https://sotrh.github.io/learn-wgpu/beginner/tutorial4-buffer/>
+//!   The chapter this example follows. Walks through `Vertex`, `bytemuck`,
+//!   `VertexBufferLayout`, `create_buffer_init`, and `draw_indexed`.
 //!
-//! - **WebGPU Fundamentals — "Inter-stage variables"**
-//!   <https://webgpufundamentals.org/webgpu/lessons/webgpu-inter-stage-variables.html>
-//!   Beginner intro to *what a vertex shader and fragment shader actually do*,
-//!   and how data flows from one to the other. Same concepts as wgpu, easier prose.
+//! - **WebGPU Fundamentals — "Vertex Buffers"**
+//!   <https://webgpufundamentals.org/webgpu/lessons/webgpu-vertex-buffers.html>
+//!   Same ideas in plainer prose: why vertex buffers exist, what attributes
+//!   and stride mean, and how index buffers cut down on duplication.
 //!
-//! - **WGSL Tour (interactive)**
-//!   <https://google.github.io/tour-of-wgsl/>
-//!   Bite-sized lessons on WGSL, the shader language we're about to write.
-//!   Skim "Hello WGSL" and "Functions" — that's enough for this chapter.
+//! - **`bytemuck` crate docs — `Pod` and `Zeroable`**
+//!   <https://docs.rs/bytemuck/latest/bytemuck/>
+//!   What the two traits actually promise, and why the derives need
+//!   `#[repr(C)]` to be sound.
 //!
-//! - **wgpu examples — `hello_triangle`**
-//!   <https://github.com/gfx-rs/wgpu/tree/trunk/examples/features/src/hello_triangle>
-//!   The official wgpu "draw one triangle" example. Useful as a second
-//!   reference when our code feels unclear — small enough to read end-to-end.
+//! - **WGSL spec — vertex inputs (`@location`)**
+//!   <https://www.w3.org/TR/WGSL/#input-output-locations>
+//!   Reference for how `@location(N)` in the shader pairs with
+//!   `shader_location: N` in the `VertexAttribute` on the Rust side.
 //!
-//! For deeper dives (graphics pipeline internals, real-engine renderers,
-//! shader programming), see `FURTHER_READING.md` at the project root.
+//! For deeper dives (mesh formats, GPU memory, real-engine vertex pipelines),
+//! see `FURTHER_READING.md` at the project root.
 //!
 //! ## Glossary mapping (this file → industry terms)
 //!
 //! | This file                    | What it's called elsewhere                   |
 //! |------------------------------|----------------------------------------------|
-//! | `ShaderModule`               | compiled shader / shader blob                |
-//! | `RenderPipeline`             | pipeline state object (PSO in D3D)           |
-//! | vertex shader (`vs_main`)    | vertex stage / vertex program                |
-//! | fragment shader (`fs_main`)  | fragment stage / pixel shader (D3D)          |
-//! | `@builtin(position)`         | clip-space position / `gl_Position` in GLSL  |
-//! | `draw(0..3, 0..1)`           | non-indexed draw call                        |
+//! | `Vertex` struct              | vertex / vertex record                       |
+//! | `VertexBufferLayout`         | vertex input layout / input assembler state  |
+//! | `array_stride`               | vertex stride / size of one vertex in bytes  |
+//! | `VertexAttribute`            | vertex attribute / input element             |
+//! | `shader_location`            | attribute location / input semantic          |
+//! | `set_vertex_buffer`          | bind vertex buffer                           |
+//! | `set_index_buffer`           | bind index buffer                            |
+//! | `draw_indexed`               | indexed draw call                            |
+//! | `bytemuck::cast_slice`       | reinterpret-cast / "view as bytes"           |
 
 use pollster::FutureExt;
 use std::iter::once;
 use std::sync::Arc;
+use wgpu::util::DeviceExt;
 use winit::application::ApplicationHandler;
-use winit::dpi::{PhysicalPosition, PhysicalSize};
+use winit::dpi::PhysicalSize;
 use winit::event::{ElementState, KeyEvent, WindowEvent};
 use winit::event_loop::{ActiveEventLoop, EventLoop};
 use winit::keyboard::{Key, NamedKey};
@@ -74,6 +90,55 @@ use winit::window::{Window, WindowId};
 
 const WIDTH: u32 = 1280;
 const HEIGHT: u32 = 720;
+
+const VERTICES: &[Vertex] = &[
+    Vertex {
+        position: [-0.5, -0.5, 0.0],
+        color: [1.0, 0.0, 0.0],
+    },
+    Vertex {
+        position: [0.5, -0.5, 0.0],
+        color: [0.0, 1.0, 0.0],
+    },
+    Vertex {
+        position: [0.5, 0.5, 0.0],
+        color: [0.0, 0.0, 1.0],
+    },
+    Vertex {
+        position: [-0.5, 0.5, 0.0],
+        color: [1.0, 1.0, 0.0],
+    },
+    Vertex {
+        position: [0.0, 1.0, 0.0],
+        color: [1.0, 1.0, 1.0],
+    },
+];
+
+const INDICES: &[u16] = &[
+    0, 1, 2, // square: lower-right triangle
+    0, 2, 3, // square: upper-left triangle
+    2, 4, 3, // roof: counter-clockwise, so it is not culled
+];
+
+#[repr(C)]
+#[derive(Copy, Clone, bytemuck::Pod, bytemuck::Zeroable)]
+struct Vertex {
+    position: [f32; 3],
+    color: [f32; 3],
+}
+
+impl Vertex {
+    const ATTRIBS: [wgpu::VertexAttribute; 2] =
+        wgpu::vertex_attr_array![0 => Float32x3, 1 => Float32x3];
+
+    fn desc() -> wgpu::VertexBufferLayout<'static> {
+        wgpu::VertexBufferLayout {
+            array_stride: size_of::<Vertex>() as wgpu::BufferAddress,
+            step_mode: wgpu::VertexStepMode::Vertex,
+            attributes: &Self::ATTRIBS,
+        }
+    }
+}
 
 /// All long-lived rendering state. Built once in `resumed`, lives until exit.
 struct State {
@@ -101,9 +166,13 @@ struct State {
     /// Re-applied via `surface.configure` whenever the window resizes.
     surface_configuration: wgpu::SurfaceConfiguration,
 
-    /// The compiled shader + pipeline settings the GPU uses to draw our triangle.
+    /// The compiled shader + pipeline settings the GPU uses to draw our shapes.
     /// Built once in `new`, bound at the start of every render pass.
     render_pipeline: wgpu::RenderPipeline,
+
+    vertex_buffer: wgpu::Buffer,
+    index_buffer: wgpu::Buffer,
+    num_indices: u32,
 }
 
 impl State {
@@ -176,15 +245,16 @@ impl State {
         // Compile the WGSL into a shader module the GPU can run.
         // `include_str!` reads the .wgsl file at compile time and embeds it as a string.
         let shader = device.create_shader_module(wgpu::ShaderModuleDescriptor {
-            label: Some("Triangle Shader"),
-            source: wgpu::ShaderSource::Wgsl(include_str!("ch03_pipeline.wgsl").into()), // into() converts &str from include_str! to Cow that Wgsl(...) expects
+            label: Some("Buffers Shader"),
+            source: wgpu::ShaderSource::Wgsl(include_str!("ch04_buffers.wgsl").into()), // into() converts &str from include_str! to Cow that Wgsl(...) expects
         });
 
-        // A pipeline layout declares what *resources* (buffers, textures, samplers) the shader will
-        // read from. Our shader reads nothing yet, it computes positions from `vertex_index` and
-        // outputs a hardcoded color, so the layout is empty.
+        // A pipeline layout declares bind-group resources like uniforms, textures and samplers.
+        // Vertex/index buffers are not bind groups; they are configured separately in
+        // `vertex.buffers` and bound in the render pass. We use no bind groups yet so this is
+        // empty.
         let pipeline_layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
-            label: Some("Triangle Pipeline Layout"),
+            label: Some("Buffers Pipeline Layout"),
             bind_group_layouts: &[], // groups of resources
             push_constant_ranges: &[],
         });
@@ -193,14 +263,14 @@ impl State {
         // stage, which runs at the fragment stage, what shape the input is, what the
         // output color format is, and how triangles are turned into pixels.
         let render_pipeline = device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
-            label: Some("Triangle Pipeline"),
+            label: Some("Buffers Pipeline"),
             layout: Some(&pipeline_layout),
 
             // ---- Vertex stage ----
             vertex: wgpu::VertexState {
                 module: &shader,
                 entry_point: Some("vs_main"),
-                buffers: &[], // "no vertex buffers." We don't pass any vertex data from the CPU
+                buffers: &[Vertex::desc()],
                 compilation_options: wgpu::PipelineCompilationOptions::default(),
             },
 
@@ -234,6 +304,20 @@ impl State {
             cache: None,
         });
 
+        let vertex_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
+            label: Some("Vertex Buffer"),
+            contents: bytemuck::cast_slice(VERTICES),
+            usage: wgpu::BufferUsages::VERTEX,
+        });
+
+        let index_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
+            label: Some("Index Buffer"),
+            contents: bytemuck::cast_slice(INDICES),
+            usage: wgpu::BufferUsages::INDEX,
+        });
+
+        let num_indices = INDICES.len() as u32;
+
         Self {
             window,
             surface,
@@ -241,6 +325,9 @@ impl State {
             queue,
             surface_configuration,
             render_pipeline,
+            vertex_buffer,
+            index_buffer,
+            num_indices,
         }
     }
 
@@ -330,7 +417,9 @@ impl State {
             };
             let mut render_pass = encoder.begin_render_pass(&descriptor);
             render_pass.set_pipeline(&self.render_pipeline);
-            render_pass.draw(0..3, 0..1); // we hard code vertices 0, 1, 2, and we draw 1 instance, 1 triangle
+            render_pass.set_vertex_buffer(0, self.vertex_buffer.slice(..));
+            render_pass.set_index_buffer(self.index_buffer.slice(..), wgpu::IndexFormat::Uint16);
+            render_pass.draw_indexed(0..self.num_indices, 0, 0..1); // 0..1 <- draw 1 instance of the object
         }
 
         // 3. Submit. The queue runs the recorded commands on the GPU.
@@ -358,7 +447,7 @@ impl ApplicationHandler for App {
         }
 
         let window_attributes = Window::default_attributes()
-            .with_title("Rust Game Engine - ch03")
+            .with_title("Rust Game Engine - ch04")
             .with_inner_size(PhysicalSize::new(WIDTH, HEIGHT));
 
         self.state = {
