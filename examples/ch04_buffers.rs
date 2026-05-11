@@ -80,13 +80,13 @@
 use pollster::FutureExt;
 use std::iter::once;
 use std::sync::Arc;
+use wgpu::util::DeviceExt;
 use winit::application::ApplicationHandler;
 use winit::dpi::PhysicalSize;
 use winit::event::{ElementState, KeyEvent, WindowEvent};
 use winit::event_loop::{ActiveEventLoop, EventLoop};
 use winit::keyboard::{Key, NamedKey};
 use winit::window::{Window, WindowId};
-use wgpu::util::DeviceExt;
 
 const WIDTH: u32 = 1280;
 const HEIGHT: u32 = 720;
@@ -101,12 +101,16 @@ const VERTICES: &[Vertex] = &[
         color: [0.0, 1.0, 0.0],
     },
     Vertex {
-        position: [0.0, 0.5, 0.0],
+        position: [0.5, 0.5, 0.0],
         color: [0.0, 0.0, 1.0],
+    },
+    Vertex {
+        position: [-0.5, 0.5, 0.0],
+        color: [1.0, 1.0, 0.0],
     },
 ];
 
-const INDICES: &[u16] = &[0, 1, 2];
+const INDICES: &[u16] = &[0, 1, 2, 0, 2, 3];
 
 #[repr(C)]
 #[derive(Copy, Clone, bytemuck::Pod, bytemuck::Zeroable)]
