@@ -86,7 +86,7 @@ use winit::event::{ElementState, KeyEvent, WindowEvent};
 use winit::event_loop::{ActiveEventLoop, EventLoop};
 use winit::keyboard::{Key, NamedKey};
 use winit::window::{Window, WindowId};
-use wgpu::util::DeviceExt;
+use wgpu::util::{DeviceExt, RenderEncoder};
 use wgpu::VertexBufferLayout;
 
 const WIDTH: u32 = 1280;
@@ -406,7 +406,8 @@ impl State {
             let mut render_pass = encoder.begin_render_pass(&descriptor);
             render_pass.set_pipeline(&self.render_pipeline);
             render_pass.set_vertex_buffer(0, self.vertex_buffer.slice(..));
-            render_pass.draw(0..3, 0..1); // we hard code vertices 0, 1, 2, and we draw 1 instance, 1 triangle
+            render_pass.set_index_buffer(self.index_buffer.slice(..), wgpu::IndexFormat::Uint16);
+            render_pass.draw_indexed(0..self.num_indices, 0, 0..1); // 0..1 <- draw 1 instance of the object
         }
 
         // 3. Submit. The queue runs the recorded commands on the GPU.
