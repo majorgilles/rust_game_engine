@@ -209,26 +209,26 @@ impl State {
                 module: &shader,
                 entry_point: Some("fs_main"),
                 targets: &[Some(wgpu::ColorTargetState {
-                    format: surface_configuration.format,  // must match the surface's pixel format. If they disagree, the pipeline is invalid: the shader writes one format, the screen expects another
+                    format: surface_configuration.format, // must match the surface's pixel format. If they disagree, the pipeline is invalid: the shader writes one format, the screen expects another
                     blend: Some(wgpu::BlendState::REPLACE), // "the fragment color overwrites whatever was there." The alternative is alpha-blending (semi-transparency), which we don't need
-                    write_mask: wgpu::ColorWrites::ALL,  // write all four channels (RGBA). You could mask out individual channels for special effects
+                    write_mask: wgpu::ColorWrites::ALL, // write all four channels (RGBA). You could mask out individual channels for special effects
                 })],
                 compilation_options: wgpu::PipelineCompilationOptions::default(),
             }),
 
             // ---- How triangles get rasterized ----
             primitive: wgpu::PrimitiveState {
-                topology: wgpu::PrimitiveTopology::TriangleList,  // "every 3 consecutive vertices form a triangle." Other options: LineList, PointList, TriangleStrip. With 3 vertices and TriangleList, we get exactly one triangle.
+                topology: wgpu::PrimitiveTopology::TriangleList, // "every 3 consecutive vertices form a triangle." Other options: LineList, PointList, TriangleStrip. With 3 vertices and TriangleList, we get exactly one triangle.
                 strip_index_format: None,
                 front_face: wgpu::FrontFace::Ccw, // vertices listed in counter-clockwise order = the front of the triangle. (Ours go bottom-right → top → bottom-left, which is CCW when viewed normally.)
                 cull_mode: Some(wgpu::Face::Back), // "throw away triangles whose back side is facing the camera." Saves work; harmless when only one triangle.
                 polygon_mode: wgpu::PolygonMode::Fill, // fill the inside. Line would draw only edges (wireframe)
                 unclipped_depth: false,
-                conservative:false,
+                conservative: false,
             },
 
             // no depth buffer or MSAA yet - keep it minimal
-            depth_stencil: None,  // no depth testing yet. We'll add it when we draw 3D meshes that overlap
+            depth_stencil: None, // no depth testing yet. We'll add it when we draw 3D meshes that overlap
             multisample: wgpu::MultisampleState::default(), // anti-aliasing off (samples = 1). Default is fine
             multiview: None,
             cache: None,

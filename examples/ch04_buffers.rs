@@ -90,6 +90,43 @@ use winit::window::{Window, WindowId};
 const WIDTH: u32 = 1280;
 const HEIGHT: u32 = 720;
 
+const VERTICES: &[Vertex] = &[
+    Vertex {
+        position: [-0.5, -0.5, 0.0],
+        color: [1.0, 0.0, 0.0],
+    },
+    Vertex {
+        position: [0.5, -0.5, 0.0],
+        color: [0.0, 1.0, 0.0],
+    },
+    Vertex {
+        position: [0.0, 0.5, 0.0],
+        color: [0.0, 0.0, 1.0],
+    },
+];
+
+const INDICES: &[u16] = &[0, 1, 2];
+
+#[repr(C)]
+#[derive(Copy, Clone, bytemuck::Pod, bytemuck::Zeroable)]
+struct Vertex {
+    position: [f32; 3],
+    color: [f32; 3],
+}
+
+impl Vertex {
+    const ATTRIBS: [wgpu::VertexAttribute; 2] =
+        wgpu::vertex_attr_array![0 => Float32x3, 1 => Float32x3];
+
+    fn desc() -> wgpu::VertexBufferLayout<'static> {
+        wgpu::VertexBufferLayout {
+            array_stride: size_of::<Vertex>() as wgpu::BufferAddress,
+            step_mode: wgpu::VertexStepMode::Vertex,
+            attributes: &Self::ATTRIBS,
+        }
+    }
+}
+
 /// All long-lived rendering state. Built once in `resumed`, lives until exit.
 struct State {
     /// The OS window. `Arc` because the Surface also keeps a handle to it —
@@ -224,26 +261,26 @@ impl State {
                 module: &shader,
                 entry_point: Some("fs_main"),
                 targets: &[Some(wgpu::ColorTargetState {
-                    format: surface_configuration.format,  // must match the surface's pixel format. If they disagree, the pipeline is invalid: the shader writes one format, the screen expects another
+                    format: surface_configuration.format, // must match the surface's pixel format. If they disagree, the pipeline is invalid: the shader writes one format, the screen expects another
                     blend: Some(wgpu::BlendState::REPLACE), // "the fragment color overwrites whatever was there." The alternative is alpha-blending (semi-transparency), which we don't need
-                    write_mask: wgpu::ColorWrites::ALL,  // write all four channels (RGBA). You could mask out individual channels for special effects
+                    write_mask: wgpu::ColorWrites::ALL, // write all four channels (RGBA). You could mask out individual channels for special effects
                 })],
                 compilation_options: wgpu::PipelineCompilationOptions::default(),
             }),
 
             // ---- How triangles get rasterized ----
             primitive: wgpu::PrimitiveState {
-                topology: wgpu::PrimitiveTopology::TriangleList,  // "every 3 consecutive vertices form a triangle." Other options: LineList, PointList, TriangleStrip. With 3 vertices and TriangleList, we get exactly one triangle.
+                topology: wgpu::PrimitiveTopology::TriangleList, // "every 3 consecutive vertices form a triangle." Other options: LineList, PointList, TriangleStrip. With 3 vertices and TriangleList, we get exactly one triangle.
                 strip_index_format: None,
                 front_face: wgpu::FrontFace::Ccw, // vertices listed in counter-clockwise order = the front of the triangle. (Ours go bottom-right → top → bottom-left, which is CCW when viewed normally.)
                 cull_mode: Some(wgpu::Face::Back), // "throw away triangles whose back side is facing the camera." Saves work; harmless when only one triangle.
                 polygon_mode: wgpu::PolygonMode::Fill, // fill the inside. Line would draw only edges (wireframe)
                 unclipped_depth: false,
-                conservative:false,
+                conservative: false,
             },
 
             // no depth buffer or MSAA yet - keep it minimal
-            depth_stencil: None,  // no depth testing yet. We'll add it when we draw 3D meshes that overlap
+            depth_stencil: None, // no depth testing yet. We'll add it when we draw 3D meshes that overlap
             multisample: wgpu::MultisampleState::default(), // anti-aliasing off (samples = 1). Default is fine
             multiview: None,
             cache: None,
