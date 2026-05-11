@@ -166,7 +166,7 @@ struct State {
     /// Re-applied via `surface.configure` whenever the window resizes.
     surface_configuration: wgpu::SurfaceConfiguration,
 
-    /// The compiled shader + pipeline settings the GPU uses to draw our triangle.
+    /// The compiled shader + pipeline settings the GPU uses to draw our shapes.
     /// Built once in `new`, bound at the start of every render pass.
     render_pipeline: wgpu::RenderPipeline,
 
@@ -245,7 +245,7 @@ impl State {
         // Compile the WGSL into a shader module the GPU can run.
         // `include_str!` reads the .wgsl file at compile time and embeds it as a string.
         let shader = device.create_shader_module(wgpu::ShaderModuleDescriptor {
-            label: Some("Triangle Shader"),
+            label: Some("Buffers Shader"),
             source: wgpu::ShaderSource::Wgsl(include_str!("ch04_buffers.wgsl").into()), // into() converts &str from include_str! to Cow that Wgsl(...) expects
         });
 
@@ -253,7 +253,7 @@ impl State {
         // read from. Our shader reads nothing yet, it computes positions from `vertex_index` and
         // outputs a hardcoded color, so the layout is empty.
         let pipeline_layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
-            label: Some("Triangle Pipeline Layout"),
+            label: Some("Buffers Pipeline Layout"),
             bind_group_layouts: &[], // groups of resources
             push_constant_ranges: &[],
         });
@@ -262,7 +262,7 @@ impl State {
         // stage, which runs at the fragment stage, what shape the input is, what the
         // output color format is, and how triangles are turned into pixels.
         let render_pipeline = device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
-            label: Some("Triangle Pipeline"),
+            label: Some("Buffers Pipeline"),
             layout: Some(&pipeline_layout),
 
             // ---- Vertex stage ----
@@ -446,7 +446,7 @@ impl ApplicationHandler for App {
         }
 
         let window_attributes = Window::default_attributes()
-            .with_title("Rust Game Engine - ch03")
+            .with_title("Rust Game Engine - ch04")
             .with_inner_size(PhysicalSize::new(WIDTH, HEIGHT));
 
         self.state = {
