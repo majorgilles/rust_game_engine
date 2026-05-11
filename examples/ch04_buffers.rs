@@ -87,6 +87,7 @@ use winit::event_loop::{ActiveEventLoop, EventLoop};
 use winit::keyboard::{Key, NamedKey};
 use winit::window::{Window, WindowId};
 use wgpu::util::DeviceExt;
+use wgpu::VertexBufferLayout;
 
 const WIDTH: u32 = 1280;
 const HEIGHT: u32 = 720;
@@ -234,7 +235,7 @@ impl State {
         // `include_str!` reads the .wgsl file at compile time and embeds it as a string.
         let shader = device.create_shader_module(wgpu::ShaderModuleDescriptor {
             label: Some("Triangle Shader"),
-            source: wgpu::ShaderSource::Wgsl(include_str!("ch03_pipeline.wgsl").into()), // into() converts &str from include_str! to Cow that Wgsl(...) expects
+            source: wgpu::ShaderSource::Wgsl(include_str!("ch04_buffers.wgsl").into()), // into() converts &str from include_str! to Cow that Wgsl(...) expects
         });
 
         // A pipeline layout declares what *resources* (buffers, textures, samplers) the shader will
@@ -257,7 +258,7 @@ impl State {
             vertex: wgpu::VertexState {
                 module: &shader,
                 entry_point: Some("vs_main"),
-                buffers: &[], // "no vertex buffers." We don't pass any vertex data from the CPU
+                buffers: &[Vertex::desc()],
                 compilation_options: wgpu::PipelineCompilationOptions::default(),
             },
 
@@ -404,6 +405,7 @@ impl State {
             };
             let mut render_pass = encoder.begin_render_pass(&descriptor);
             render_pass.set_pipeline(&self.render_pipeline);
+            render_pass.set_vertex_buffer(0, self.vertex_buffer.slice(..));
             render_pass.draw(0..3, 0..1); // we hard code vertices 0, 1, 2, and we draw 1 instance, 1 triangle
         }
 
