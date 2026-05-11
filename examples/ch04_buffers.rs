@@ -108,9 +108,17 @@ const VERTICES: &[Vertex] = &[
         position: [-0.5, 0.5, 0.0],
         color: [1.0, 1.0, 0.0],
     },
+    Vertex {
+        position: [0.0, 1.0, 0.0],
+        color: [1.0, 1.0, 1.0],
+    },
 ];
 
-const INDICES: &[u16] = &[0, 1, 2, 0, 2, 3];
+const INDICES: &[u16] = &[
+    0, 1, 2, // square: lower-right triangle
+    0, 2, 3, // square: upper-left triangle
+    2, 4, 3, // roof: counter-clockwise, so it is not culled
+];
 
 #[repr(C)]
 #[derive(Copy, Clone, bytemuck::Pod, bytemuck::Zeroable)]
