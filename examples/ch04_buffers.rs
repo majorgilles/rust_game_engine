@@ -81,13 +81,12 @@ use pollster::FutureExt;
 use std::iter::once;
 use std::sync::Arc;
 use winit::application::ApplicationHandler;
-use winit::dpi::{PhysicalPosition, PhysicalSize};
+use winit::dpi::PhysicalSize;
 use winit::event::{ElementState, KeyEvent, WindowEvent};
 use winit::event_loop::{ActiveEventLoop, EventLoop};
 use winit::keyboard::{Key, NamedKey};
 use winit::window::{Window, WindowId};
-use wgpu::util::{DeviceExt, RenderEncoder};
-use wgpu::VertexBufferLayout;
+use wgpu::util::DeviceExt;
 
 const WIDTH: u32 = 1280;
 const HEIGHT: u32 = 720;
