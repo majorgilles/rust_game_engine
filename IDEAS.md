@@ -48,3 +48,16 @@ pipeline objects). It hits a sweet spot between "OpenGL was too magical" and
 as their default cross-platform GPU API even with no web involvement.
 
 Mental model: wgpu = native graphics with a portable API; "Web" is historical.
+
+
+## ch04
+
+### Winding order + culling was the big gotcha
+
+With `front_face: Ccw` and `cull_mode: Back`, the order of triangle indices decides
+whether a triangle is visible. The roof triangle `2, 3, 4` disappeared because it was
+wound the wrong way and got back-face culled. Reordering it to `2, 4, 3` made it
+counter-clockwise from the camera's point of view, so it rendered.
+
+Mental model: if geometry vanishes after changing indices, check triangle winding
+before assuming the buffers or shader are broken.

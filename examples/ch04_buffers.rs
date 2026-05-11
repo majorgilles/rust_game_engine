@@ -249,9 +249,10 @@ impl State {
             source: wgpu::ShaderSource::Wgsl(include_str!("ch04_buffers.wgsl").into()), // into() converts &str from include_str! to Cow that Wgsl(...) expects
         });
 
-        // A pipeline layout declares what *resources* (buffers, textures, samplers) the shader will
-        // read from. Our shader reads nothing yet, it computes positions from `vertex_index` and
-        // outputs a hardcoded color, so the layout is empty.
+        // A pipeline layout declares bind-group resources like uniforms, textures and samplers.
+        // Vertex/index buffers are not bind groups; they are configured separately in
+        // `vertex.buffers` and bound in the render pass. We use no bind groups yet so this is
+        // empty.
         let pipeline_layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
             label: Some("Buffers Pipeline Layout"),
             bind_group_layouts: &[], // groups of resources

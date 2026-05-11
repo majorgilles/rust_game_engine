@@ -20,9 +20,9 @@ struct VertexOutput {
     @location(0) color: vec3<f32>,
 }
 
-// Vertex shader: runs once per vertex (3 times for our triangle).
-// Returns the corner's position in clip space (the GPU's coordinate system).
-// vertex_index will take values 0, 1, 2
+// Vertex shader: runs for vertices selected by the indexed draw.
+// `input.position` and `input.color` come from the bound vertex buffer,
+// using the layout described by `Vertex::desc()` in Rust
 @vertex
 fn vs_main(input: VertexInput) -> VertexOutput {
     var out: VertexOutput;
@@ -31,7 +31,7 @@ fn vs_main(input: VertexInput) -> VertexOutput {
     return out;
 }
 
-// Fragment shader: runs once per pixel inside the triangle.
+// Fragment shader: runs once per pixel inside the rasterized triangles.
 // `@builtin(position)` here is the pixel's screen-space position in pixels.
 // "Fragment" is the GPU's word for "candidate pixel"; you can read them as the same thing here
 @fragment
