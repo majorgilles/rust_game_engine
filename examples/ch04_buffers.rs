@@ -86,6 +86,7 @@ use winit::event::{ElementState, KeyEvent, WindowEvent};
 use winit::event_loop::{ActiveEventLoop, EventLoop};
 use winit::keyboard::{Key, NamedKey};
 use winit::window::{Window, WindowId};
+use wgpu::util::DeviceExt;
 
 const WIDTH: u32 = 1280;
 const HEIGHT: u32 = 720;
@@ -156,6 +157,10 @@ struct State {
     /// The compiled shader + pipeline settings the GPU uses to draw our triangle.
     /// Built once in `new`, bound at the start of every render pass.
     render_pipeline: wgpu::RenderPipeline,
+
+    vertex_buffer: wgpu::Buffer,
+    index_buffer: wgpu::Buffer,
+    num_indices: u32,
 }
 
 impl State {
@@ -286,6 +291,20 @@ impl State {
             cache: None,
         });
 
+        let vertex_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
+            label: Some("Vertex Buffer"),
+            contents: bytemuck::cast_slice(VERTICES),
+            usage: wgpu::BufferUsages::VERTEX,
+        });
+
+        let index_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
+            label: Some("Index Buffer"),
+            contents: bytemuck::cast_slice(INDICES),
+            usage: wgpu::BufferUsages::INDEX,
+        });
+
+        let num_indices = INDICES.len() as u32;
+
         Self {
             window,
             surface,
@@ -293,6 +312,9 @@ impl State {
             queue,
             surface_configuration,
             render_pipeline,
+            vertex_buffer,
+            index_buffer,
+            num_indices,
         }
     }
 
