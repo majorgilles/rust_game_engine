@@ -6,6 +6,7 @@
 mod app;
 mod mesh;
 mod renderer;
+mod texture;
 
 use app::App;
 use winit::event_loop::EventLoop;
