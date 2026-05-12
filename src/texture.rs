@@ -29,7 +29,6 @@
 // Brings the `dimensions()` method into scope for `image::DynamicImage`.
 // Without this trait import, `image.dimensions()` below will not compile.
 use image::GenericImageView;
-use wgpu::Queue;
 
 // A small wrapper that keeps the texture-related GPU objects together.
 //
@@ -49,7 +48,7 @@ impl Texture {
     // This function decodes those bytes into an `image::DynamicImage`, then hands
     // the decoded image to `from_image`, which does the actual GPU upload work.
     pub fn from_bytes(
-        device: wgpu::Device,
+        device: &wgpu::Device,
         queue: &wgpu::Queue,
         bytes: &[u8],
         label: &str,
@@ -60,7 +59,7 @@ impl Texture {
 
         // Reuse the image-upload path below so all texture creation logic lives
         // in one place.
-        Ok(Self::from_image(&device, queue, &image, Some(label)))
+        Ok(Self::from_image(device, queue, &image, Some(label)))
     }
 
     // Build a GPU texture from an already-decoded CPU image.
