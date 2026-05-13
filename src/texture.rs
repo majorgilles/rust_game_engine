@@ -129,7 +129,6 @@ impl Texture {
         // The shader will bind this view, not the raw texture object.
         let view = texture.create_view(&wgpu::TextureViewDescriptor::default());
 
-
         // Create the sampler that controls how texture coordinates turn into pixels.
         //
         // Repeat makes UVs outside [0, 1] wrap around, so coordinates like 1.25
