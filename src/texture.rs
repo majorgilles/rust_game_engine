@@ -135,8 +135,8 @@ impl Texture {
         // Linear magnification smooths the image when it is enlarged.
         // Nearest minification/mipmap filtering keeps the setup simple for now.
         let sampler = device.create_sampler(&wgpu::SamplerDescriptor {
-               address_mode_u: wgpu::AddressMode::ClampToEdge,
-               address_mode_v: wgpu::AddressMode::ClampToEdge,
+               address_mode_u: wgpu::AddressMode::Repeat,
+               address_mode_v: wgpu::AddressMode::Repeat,
                address_mode_w: wgpu::AddressMode::ClampToEdge,
                mag_filter: wgpu::FilterMode::Linear,
                min_filter: wgpu::FilterMode::Nearest,
