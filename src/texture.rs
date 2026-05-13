@@ -35,7 +35,7 @@ use image::GenericImageView;
 // We store all three because the shader does not read a `Texture` directly:
 // it samples from a `TextureView` using a `Sampler`.
 pub struct Texture {
-    #[allow(unused)]  // Do not warn me if texture is currently unused
+    #[allow(unused)] // Do not warn me if texture is currently unused
     pub texture: wgpu::Texture, // wgpu::Texture is the actual GPU-side image storage: a block of GPU memory that can hold pixels, like a loaded PNG or a render target.
     pub view: wgpu::TextureView, // GPU-facing “view” of a wgpu::Texture. It describes how the texture should be accessed by shaders or render passes
     pub sampler: wgpu::Sampler, // GPU object that tells the shader how to read pixels from a texture
@@ -85,9 +85,9 @@ impl Texture {
         // Describe the 2D texture's dimensions for wgpu.
         // Textures are described as 3D extents; a normal 2D image uses depth 1.
         let size = wgpu::Extent3d {
-            width:dimensions.0,
-            height:dimensions.1,
-            depth_or_array_layers:1, // For a normal 2D texture, it usually means: how many texture layers. Most beginner 2D images use 1.
+            width: dimensions.0,
+            height: dimensions.1,
+            depth_or_array_layers: 1, // For a normal 2D texture, it usually means: how many texture layers. Most beginner 2D images use 1.
         };
 
         // Allocate the actual texture memory on the GPU.
@@ -101,7 +101,7 @@ impl Texture {
             dimension: wgpu::TextureDimension::D2,
             format: wgpu::TextureFormat::Rgba8UnormSrgb, // TODO store it in a global
             usage: wgpu::TextureUsages::TEXTURE_BINDING | wgpu::TextureUsages::COPY_DST,
-            view_formats: &[]
+            view_formats: &[],
         });
 
         // Copy the CPU-side RGBA pixels into the GPU texture.
@@ -132,17 +132,19 @@ impl Texture {
         // Create the sampler that controls how texture coordinates turn into pixels.
         //
         // ClampToEdge prevents sampling outside [0, 1] from wrapping around.
+        // Repeat makes UVs outside [0, 1] wrap around, so coordinates like 1.25
+        // sample from 0.25 and the image tiles across the mesh
         // Linear magnification smooths the image when it is enlarged.
         // Nearest minification/mipmap filtering keeps the setup simple for now.
         let sampler = device.create_sampler(&wgpu::SamplerDescriptor {
-               address_mode_u: wgpu::AddressMode::Repeat,
-               address_mode_v: wgpu::AddressMode::Repeat,
-               address_mode_w: wgpu::AddressMode::ClampToEdge,
-               mag_filter: wgpu::FilterMode::Linear,
-               min_filter: wgpu::FilterMode::Nearest,
-               mipmap_filter: wgpu::FilterMode::Nearest,
-               ..Default::default()
-           });
+            address_mode_u: wgpu::AddressMode::Repeat,
+            address_mode_v: wgpu::AddressMode::Repeat,
+            address_mode_w: wgpu::AddressMode::ClampToEdge,
+            mag_filter: wgpu::FilterMode::Linear,
+            min_filter: wgpu::FilterMode::Nearest,
+            mipmap_filter: wgpu::FilterMode::Nearest,
+            ..Default::default()
+        });
 
         // Return the three GPU objects as one logical texture resource.
         Self {
