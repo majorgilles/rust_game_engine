@@ -11,7 +11,7 @@ use std::sync::Arc;
 use wgpu::util::DeviceExt;
 use winit::window::CursorIcon::Text;
 use winit::window::Window;
-use crate::texture::Texture;;
+use crate::texture::Texture;
 
 /// All long-lived rendering state. Built once in `resumed`, lives until exit.
 pub struct Renderer {
