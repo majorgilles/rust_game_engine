@@ -9,7 +9,9 @@ use pollster::FutureExt;
 use std::iter::once;
 use std::sync::Arc;
 use wgpu::util::DeviceExt;
+use winit::window::CursorIcon::Text;
 use winit::window::Window;
+use crate::texture::Texture;;
 
 /// All long-lived rendering state. Built once in `resumed`, lives until exit.
 pub struct Renderer {
@@ -44,6 +46,9 @@ pub struct Renderer {
     vertex_buffer: wgpu::Buffer,
     index_buffer: wgpu::Buffer,
     num_indices: u32,
+
+    diffuse_bind_group: wgpu::BindGroup,
+    _diffuse_texture: Texture,
 }
 
 impl Renderer {
@@ -142,6 +147,23 @@ impl Renderer {
             ],
         });
 
+        let diffuse_bytes = include_bytes!("../assets/happy-tree.png");
+        let diffuse_texture = Texture::from_bytes(&device, &queue, diffuse_bytes, "happy-tree.png").expect("Failed to load diffuse texture");
+        let diffuse_bind_group = device.create_bind_group(&wgpu::BindGroupDescriptor {
+            label: Some("Diffuse Bind Group"),
+            layout: &texture_bind_group_layout,
+            entries: &[
+                wgpu::BindGroupEntry{
+                    binding: 0,
+                    resource: wgpu::BindingResource::TextureView(&diffuse_texture.view),
+                },
+                wgpu::BindGroupEntry {
+                    binding: 1,
+                    resource: wgpu::BindingResource::Sampler(&diffuse_texture.sampler),
+                }
+            ]
+        });
+
         // A pipeline layout declares bind-group resources like uniforms, textures and samplers.
         // Vertex/index buffers are not bind groups; they are configured separately in
         // `vertex.buffers` and bound in the render pass. We use no bind groups yet so this is
@@ -221,6 +243,8 @@ impl Renderer {
             vertex_buffer,
             index_buffer,
             num_indices,
+            diffuse_bind_group,
+            _diffuse_texture: diffuse_texture,
         }
     }
 
@@ -310,6 +334,7 @@ impl Renderer {
             };
             let mut render_pass = encoder.begin_render_pass(&descriptor);
             render_pass.set_pipeline(&self.render_pipeline);
+            render_pass.set_bind_group(0, &self.diffuse_bind_group, &[]);
             render_pass.set_vertex_buffer(0, self.vertex_buffer.slice(..));
             render_pass.set_index_buffer(self.index_buffer.slice(..), wgpu::IndexFormat::Uint16);
             render_pass.draw_indexed(0..self.num_indices, 0, 0..1); // 0..1 <- draw 1 instance of the object
