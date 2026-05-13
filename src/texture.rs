@@ -131,8 +131,8 @@ impl Texture {
 
         // Create the sampler that controls how texture coordinates turn into pixels.
         //
-        // Repeat makes UVs outside [0, 1] wrap around, so coordinates like 1.25
-        // sample from 0.25 and the image tiles across the mesh.
+        // MirrorRepeat on U alternates horizontal tiles normal/flipped/normal.
+        // Repeat on V would tile vertically if the V coordinates exceeded 1.0.
         // Linear magnification smooths the image when it is enlarged.
         // Nearest minification/mipmap filtering keeps the setup simple for now.
         let sampler = device.create_sampler(&wgpu::SamplerDescriptor {

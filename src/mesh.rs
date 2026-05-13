@@ -4,7 +4,7 @@
 //! `@location` inputs. The renderer uploads `VERTICES` and `INDICES` into GPU
 //! buffers and draws them with one indexed draw call.
 
-// Chapter 5 variation: UVs go past 1.0 so AddressMode::Repeat tiles the texture.
+// Chapter 5 variation: UVs go past 1.0 so sampler address modes can tile/mirror the texture.
 pub const VERTICES: &[Vertex] = &[
     Vertex {
         // bottom-left
