@@ -220,7 +220,7 @@ impl Renderer {
             cache: None,
         });
 
-        let (vertices, indices) = create_vertices_for_quads(1);
+        let (vertices, indices) = create_vertices_for_quads(4);
 
         let vertex_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
             label: Some("Vertex Buffer"),

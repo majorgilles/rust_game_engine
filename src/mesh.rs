@@ -44,7 +44,7 @@ fn push_quad(
     vertices: &mut Vec<Vertex>,
     indices: &mut Vec<u16>,
     vertex_bounds: &QuadBounds,
-    uv_bounds: &QuadBounds,
+    uv_bounds: QuadBounds,
 ) {
     let base = vertices.len() as u16;
     vertices.extend_from_slice(&[
@@ -110,7 +110,7 @@ pub fn create_vertices_for_quads(number_of_quads: i32) -> (Vec<Vertex>, Vec<u16>
             &mut vertices,
             &mut indices,
             &bounds,
-            &QuadBounds {
+            QuadBounds {
                 left: 0.0,
                 right: 3.0,
                 bottom: 3.0,
