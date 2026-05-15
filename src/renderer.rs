@@ -4,16 +4,15 @@
 //! pipeline, and GPU buffers. `App` tells it when the window resizes or when a
 //! frame should be rendered; everything below that boundary is rendering work.
 
-use crate::mesh::{INDICES, VERTICES, Vertex};
+use crate::mesh::{Vertex, create_vertices_for_quads};
 use crate::texture::Texture;
 use pollster::FutureExt;
 use std::iter::once;
 use std::sync::Arc;
 use wgpu::util::DeviceExt;
-use winit::window::CursorIcon::Text;
 use winit::window::Window;
 
-/// All long-lived rendering state. Built once in `resumed`, lives until exit.
+/// All long-lived rendering state components. Built once in `resumed`, lives until exit.
 pub struct Renderer {
     /// The OS window. `Arc` because the Surface also keeps a handle to it —
     /// shared ownership is how we promise wgpu that the window outlives the surface.
@@ -39,7 +38,7 @@ pub struct Renderer {
     /// Re-applied via `surface.configure` whenever the window resizes.
     surface_configuration: wgpu::SurfaceConfiguration,
 
-    /// The compiled shader + pipeline settings the GPU uses to draw our shapes.
+    /// The compiled shader and pipeline settings the GPU uses to draw our shapes.
     /// Built once in `new`, bound at the start of every render pass.
     render_pipeline: wgpu::RenderPipeline,
 
@@ -168,7 +167,7 @@ impl Renderer {
 
         // A pipeline layout declares bind-group resources like uniforms, textures and samplers.
         // Vertex/index buffers are not bind groups; they are configured separately in
-        // `vertex.buffers` and bound in the render pass. We use no bind groups yet so this is
+        // `vertex.buffers` and bound in the render pass. We use no bind groups yet, so this is
         // empty.
         let pipeline_layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
             label: Some("Main Pipeline Layout"),
@@ -216,24 +215,26 @@ impl Renderer {
 
             // no depth buffer or MSAA yet - keep it minimal
             depth_stencil: None, // no depth testing yet. We'll add it when we draw 3D meshes that overlap
-            multisample: wgpu::MultisampleState::default(), // anti-aliasing off (samples = 1). Default is fine
+            multisample: wgpu::MultisampleState::default(), // antialiasing off (samples = 1). Default is fine
             multiview: None,
             cache: None,
         });
 
+        let (vertices, indices) = create_vertices_for_quads(1);
+
         let vertex_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
             label: Some("Vertex Buffer"),
-            contents: bytemuck::cast_slice(VERTICES),
+            contents: bytemuck::cast_slice(&vertices),
             usage: wgpu::BufferUsages::VERTEX,
         });
 
         let index_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
             label: Some("Index Buffer"),
-            contents: bytemuck::cast_slice(INDICES),
+            contents: bytemuck::cast_slice(&indices),
             usage: wgpu::BufferUsages::INDEX,
         });
 
-        let num_indices = INDICES.len() as u32;
+        let num_indices = indices.len() as u32;
 
         Self {
             window,
@@ -274,8 +275,8 @@ impl Renderer {
     ///   4. **Present** — tell the OS to display the finished frame.
     pub fn render(&mut self) {
         // 1. Acquire. The surface hands us the next texture to render into.
-        // Lost/Outdated typically follow a resize or wake-from-sleep — recover by reconfiguring
-        // and dropping this frame.
+        // Lost/Outdated textures typically follow a resize or wake-from-sleep —
+        // recover by reconfiguring and dropping this frame.
         let frame = match self.surface.get_current_texture() {
             Ok(frame) => frame,
             Err(wgpu::SurfaceError::Lost | wgpu::SurfaceError::Outdated) => {
@@ -345,7 +346,7 @@ impl Renderer {
         // 3. Submit. The queue runs the recorded commands on the GPU.
         let command_buffer = encoder.finish();
         self.queue.submit(once(command_buffer));
-        // 4. Present. Without this, the GPU drew but the OS never shows it.
+        // 4. Present. Without this, the GPU drew the image, but the OS never shows it.
         frame.present();
         // Ask winit for another RedrawRequested so we keep rendering continuously.
         self.window.request_redraw();
