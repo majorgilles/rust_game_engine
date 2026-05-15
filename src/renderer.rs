@@ -46,9 +46,7 @@ pub struct Renderer {
 
     vertex_buffer: wgpu::Buffer,
     index_buffer: wgpu::Buffer,
-    num_indices: u32,
 
-    diffuse_bind_group: wgpu::BindGroup,
     _diffuse_texture: Texture,
     clamp_linear_bind_group: wgpu::BindGroup,
     _clamp_linear_sampler: wgpu::Sampler,
@@ -160,20 +158,6 @@ impl Renderer {
         let diffuse_bytes = include_bytes!("../assets/happy-tree.png");
         let diffuse_texture = Texture::from_bytes(&device, &queue, diffuse_bytes, "happy-tree.png")
             .expect("Failed to load diffuse texture");
-        let diffuse_bind_group = device.create_bind_group(&wgpu::BindGroupDescriptor {
-            label: Some("Diffuse Bind Group"),
-            layout: &texture_bind_group_layout,
-            entries: &[
-                wgpu::BindGroupEntry {
-                    binding: 0,
-                    resource: wgpu::BindingResource::TextureView(&diffuse_texture.view),
-                },
-                wgpu::BindGroupEntry {
-                    binding: 1,
-                    resource: wgpu::BindingResource::Sampler(&diffuse_texture.sampler),
-                },
-            ],
-        });
 
         let clamp_linear_sampler = device.create_sampler(&wgpu::SamplerDescriptor {
             label: Some("Clamp Sampler"),
@@ -270,7 +254,7 @@ impl Renderer {
                 },
                 wgpu::BindGroupEntry {
                     binding: 1,
-                    resource: wgpu::BindingResource::Sampler(&repeat_nearest_sampler),
+                    resource: wgpu::BindingResource::Sampler(&repeat_linear_sampler),
                 },
             ],
         });
@@ -344,8 +328,6 @@ impl Renderer {
             usage: wgpu::BufferUsages::INDEX,
         });
 
-        let num_indices = indices.len() as u32;
-
         Self {
             window,
             surface,
@@ -355,8 +337,6 @@ impl Renderer {
             render_pipeline,
             vertex_buffer,
             index_buffer,
-            num_indices,
-            diffuse_bind_group,
             _diffuse_texture: diffuse_texture,
             clamp_linear_bind_group,
             _clamp_linear_sampler: clamp_linear_sampler,
@@ -467,7 +447,7 @@ impl Renderer {
                     1 => render_pass.set_bind_group(0, &self.mirror_nearest_bind_group, &[]),
                     2 => render_pass.set_bind_group(0, &self.repeat_linear_bind_group, &[]),
                     3 => render_pass.set_bind_group(0, &self.clamp_linear_bind_group, &[]),
-                    _ => {}
+                    _ => unreachable!(),
                 }
 
                 render_pass.draw_indexed(start..end, 0, 0..1);

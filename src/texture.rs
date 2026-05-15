@@ -1,9 +1,13 @@
 // Texture loading helper for chapter 5.
 //
-// The renderer needs three GPU objects to sample an image in a shader:
-// 1. `wgpu::Texture`     - the actual image memory on the GPU.
-// 2. `wgpu::TextureView` - the shader/render-pass view into that texture.
+// To sample an image in a shader, the renderer eventually binds a texture view
+// plus a sampler:
+// 1. `wgpu::Texture`     - the actual image memory on the GPU, kept alive here.
+// 2. `wgpu::TextureView` - the shader-facing view into that texture.
 // 3. `wgpu::Sampler`     - the rules for reading pixels from the texture.
+//
+// In the texture lab, samplers live in `Renderer` instead of this wrapper so the
+// same image/view can be paired with several different sampling rules.
 //
 // Extra reading: what is a texture, conceptually?
 // - Computer Graphics from Scratch: Textures
@@ -30,15 +34,15 @@
 // Without this trait import, `image.dimensions()` below will not compile.
 use image::GenericImageView;
 
-// A small wrapper that keeps the texture-related GPU objects together.
+// A small wrapper for image storage plus its default shader-facing view.
 //
-// We store all three because the shader does not read a `Texture` directly:
-// it samples from a `TextureView` using a `Sampler`.
+// The shader does not read a `Texture` directly: it samples from a `TextureView`
+// using a `Sampler`. This wrapper owns the image/view side; `Renderer` creates
+// the sampler variants used by the comparison quads.
 pub struct Texture {
     #[allow(unused)] // Do not warn me if texture is currently unused
     pub texture: wgpu::Texture, // wgpu::Texture is the actual GPU-side image storage: a block of GPU memory that can hold pixels, like a loaded PNG or a render target.
     pub view: wgpu::TextureView, // GPU-facing “view” of a wgpu::Texture. It describes how the texture should be accessed by shaders or render passes
-    pub sampler: wgpu::Sampler, // GPU object that tells the shader how to read pixels from a texture
 }
 
 impl Texture {
@@ -66,7 +70,7 @@ impl Texture {
     //
     // This is the main texture creation pipeline:
     // decode/convert pixels -> allocate GPU texture -> upload pixels ->
-    // create view -> create sampler -> return wrapper.
+    // create view -> return wrapper.
     pub fn from_image(
         device: &wgpu::Device,
         queue: &wgpu::Queue,
@@ -129,27 +133,9 @@ impl Texture {
         // The shader will bind this view, not the raw texture object.
         let view = texture.create_view(&wgpu::TextureViewDescriptor::default());
 
-        // Create the sampler that controls how texture coordinates turn into pixels.
-        //
-        // MirrorRepeat on U alternates horizontal tiles normal/flipped/normal.
-        // Repeat on V would tile vertically if the V coordinates exceeded 1.0.
-        // Linear magnification smooths the image when it is enlarged.
-        // Nearest minification/mipmap filtering keeps the setup simple for now.
-        let sampler = device.create_sampler(&wgpu::SamplerDescriptor {
-            address_mode_u: wgpu::AddressMode::MirrorRepeat,
-            address_mode_v: wgpu::AddressMode::Repeat,
-            address_mode_w: wgpu::AddressMode::ClampToEdge,
-            mag_filter: wgpu::FilterMode::Linear,
-            min_filter: wgpu::FilterMode::Nearest,
-            mipmap_filter: wgpu::FilterMode::Nearest,
-            ..Default::default()
-        });
-
-        // Return the three GPU objects as one logical texture resource.
         Self {
             texture,
             view,
-            sampler,
         }
     }
 }
