@@ -50,6 +50,8 @@ pub struct Renderer {
 
     diffuse_bind_group: wgpu::BindGroup,
     _diffuse_texture: Texture,
+    clamp_bind_group: wgpu::BindGroup,
+    _clamp_sampler: wgpu::Sampler,
 }
 
 impl Renderer {
@@ -167,6 +169,31 @@ impl Renderer {
             ],
         });
 
+        let clamp_sampler = device.create_sampler(&wgpu::SamplerDescriptor {
+            label: Some("Clamp Sampler"),
+            address_mode_u: wgpu::AddressMode::ClampToEdge,
+            address_mode_v: wgpu::AddressMode::ClampToEdge,
+            mag_filter: wgpu::FilterMode::Linear,
+            min_filter: wgpu::FilterMode::Nearest,
+            mipmap_filter: wgpu::FilterMode::Nearest,
+            ..Default::default()
+        });
+
+        let clamp_bind_group = device.create_bind_group(&wgpu:: BindGroupDescriptor {
+            label: Some("Clamp Bind Group"),
+            layout: &texture_bind_group_layout,
+            entries: &[
+                wgpu::BindGroupEntry {
+                    binding: 0,
+                    resource: wgpu::BindingResource::TextureView(&diffuse_texture.view),
+                },
+                wgpu::BindGroupEntry {
+                    binding: 1,
+                    resource: wgpu::BindingResource::Sampler(&clamp_sampler),
+                }
+            ]
+        });
+
         // A pipeline layout declares bind-group resources like uniforms, textures and samplers.
         // Vertex/index buffers are not bind groups; they are configured separately in
         // `vertex.buffers` and bound in the render pass. We use no bind groups yet, so this is
@@ -249,7 +276,9 @@ impl Renderer {
             index_buffer,
             num_indices,
             diffuse_bind_group,
+            clamp_bind_group,
             _diffuse_texture: diffuse_texture,
+            _clamp_sampler: clamp_sampler,
         }
     }
 
@@ -339,13 +368,20 @@ impl Renderer {
             };
             let mut render_pass = encoder.begin_render_pass(&descriptor);
             render_pass.set_pipeline(&self.render_pipeline);
-            render_pass.set_bind_group(0, &self.diffuse_bind_group, &[]);
             render_pass.set_vertex_buffer(0, self.vertex_buffer.slice(..));
             render_pass.set_index_buffer(self.index_buffer.slice(..), wgpu::IndexFormat::Uint16);
 
             for quad_index in 0..NUMBER_QUADS {
                 let start = (quad_index * 6) as u32;
                 let end = start + 6;
+
+                if quad_index == 0 {
+                    render_pass.set_bind_group(0, &self.clamp_bind_group, &[]);
+                }
+                else {
+                    render_pass.set_bind_group(0, &self.diffuse_bind_group, &[]);
+                }
+
                 render_pass.draw_indexed(start..end, 0, 0..1);
             }
         }
