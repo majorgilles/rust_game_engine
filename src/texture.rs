@@ -133,9 +133,6 @@ impl Texture {
         // The shader will bind this view, not the raw texture object.
         let view = texture.create_view(&wgpu::TextureViewDescriptor::default());
 
-        Self {
-            texture,
-            view,
-        }
+        Self { texture, view }
     }
 }
