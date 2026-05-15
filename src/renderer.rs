@@ -12,7 +12,53 @@ use std::sync::Arc;
 use wgpu::util::DeviceExt;
 use winit::window::Window;
 
-const NUMBER_QUADS: i32 = 4;
+const NUMBER_QUADS: usize = 4;
+
+struct SamplerLabCase {
+    bind_group: wgpu::BindGroup,
+    _sampler: wgpu::Sampler,
+}
+
+fn create_sampler_lab_case(
+    device: &wgpu::Device,
+    layout: &wgpu::BindGroupLayout,
+    texture_view: &wgpu::TextureView,
+    sampler_label: &str,
+    bind_group_label: &str,
+    address_mode: wgpu::AddressMode,
+    mag_filter: wgpu::FilterMode,
+    min_filter: wgpu::FilterMode,
+) -> SamplerLabCase {
+    let sampler = device.create_sampler(&wgpu::SamplerDescriptor {
+        label: Some(sampler_label),
+        address_mode_u: address_mode,
+        address_mode_v: address_mode,
+        mag_filter,
+        min_filter,
+        mipmap_filter: wgpu::FilterMode::Nearest,
+        ..Default::default()
+    });
+
+    let bind_group = device.create_bind_group(&wgpu::BindGroupDescriptor {
+        label: Some(bind_group_label),
+        layout,
+        entries: &[
+            wgpu::BindGroupEntry {
+                binding: 0,
+                resource: wgpu::BindingResource::TextureView(texture_view),
+            },
+            wgpu::BindGroupEntry {
+                binding: 1,
+                resource: wgpu::BindingResource::Sampler(&sampler),
+            },
+        ],
+    });
+
+    SamplerLabCase {
+        bind_group,
+        _sampler: sampler,
+    }
+}
 
 /// All long-lived rendering state components. Built once in `resumed`, lives until exit.
 pub struct Renderer {
@@ -48,14 +94,7 @@ pub struct Renderer {
     index_buffer: wgpu::Buffer,
 
     _diffuse_texture: Texture,
-    clamp_linear_bind_group: wgpu::BindGroup,
-    _clamp_linear_sampler: wgpu::Sampler,
-    repeat_nearest_bind_group: wgpu::BindGroup,
-    _repeat_nearest_sampler: wgpu::Sampler,
-    mirror_nearest_bind_group: wgpu::BindGroup,
-    _mirror_nearest_sampler: wgpu::Sampler,
-    repeat_linear_bind_group: wgpu::BindGroup,
-    _repeat_linear_sampler: wgpu::Sampler,
+    sampler_lab_cases: Vec<SamplerLabCase>,
 }
 
 impl Renderer {
@@ -159,105 +198,48 @@ impl Renderer {
         let diffuse_texture = Texture::from_bytes(&device, &queue, diffuse_bytes, "happy-tree.png")
             .expect("Failed to load diffuse texture");
 
-        let clamp_linear_sampler = device.create_sampler(&wgpu::SamplerDescriptor {
-            label: Some("Clamp Sampler"),
-            address_mode_u: wgpu::AddressMode::ClampToEdge,
-            address_mode_v: wgpu::AddressMode::ClampToEdge,
-            mag_filter: wgpu::FilterMode::Linear,
-            min_filter: wgpu::FilterMode::Nearest,
-            mipmap_filter: wgpu::FilterMode::Nearest,
-            ..Default::default()
-        });
-
-        let clamp_linear_bind_group = device.create_bind_group(&wgpu::BindGroupDescriptor {
-            label: Some("Clamp Linear Bind Group"),
-            layout: &texture_bind_group_layout,
-            entries: &[
-                wgpu::BindGroupEntry {
-                    binding: 0,
-                    resource: wgpu::BindingResource::TextureView(&diffuse_texture.view),
-                },
-                wgpu::BindGroupEntry {
-                    binding: 1,
-                    resource: wgpu::BindingResource::Sampler(&clamp_linear_sampler),
-                },
-            ],
-        });
-
-        let repeat_nearest_sampler = device.create_sampler(&wgpu::SamplerDescriptor {
-            label: Some("Repeat Nearest Sampler"),
-            address_mode_u: wgpu::AddressMode::Repeat,
-            address_mode_v: wgpu::AddressMode::Repeat,
-            mag_filter: wgpu::FilterMode::Nearest,
-            min_filter: wgpu::FilterMode::Nearest,
-            mipmap_filter: wgpu::FilterMode::Nearest,
-            ..Default::default()
-        });
-
-        let repeat_nearest_bind_group = device.create_bind_group(&wgpu::BindGroupDescriptor {
-            label: Some("Repeat Nearest Bind Group"),
-            layout: &texture_bind_group_layout,
-            entries: &[
-                wgpu::BindGroupEntry {
-                    binding: 0,
-                    resource: wgpu::BindingResource::TextureView(&diffuse_texture.view),
-                },
-                wgpu::BindGroupEntry {
-                    binding: 1,
-                    resource: wgpu::BindingResource::Sampler(&repeat_nearest_sampler),
-                },
-            ],
-        });
-
-        let mirror_nearest_sampler = device.create_sampler(&wgpu::SamplerDescriptor {
-            label: Some("Mirror Nearest Sampler"),
-            address_mode_u: wgpu::AddressMode::MirrorRepeat,
-            address_mode_v: wgpu::AddressMode::MirrorRepeat,
-            mag_filter: wgpu::FilterMode::Nearest,
-            min_filter: wgpu::FilterMode::Nearest,
-            mipmap_filter: wgpu::FilterMode::Nearest,
-            ..Default::default()
-        });
-
-        let mirror_nearest_bind_group = device.create_bind_group(&wgpu::BindGroupDescriptor {
-            label: Some("Mirror Nearest Bind Group"),
-            layout: &texture_bind_group_layout,
-            entries: &[
-                wgpu::BindGroupEntry {
-                    binding: 0,
-                    resource: wgpu::BindingResource::TextureView(&diffuse_texture.view),
-                },
-                wgpu::BindGroupEntry {
-                    binding: 1,
-                    resource: wgpu::BindingResource::Sampler(&mirror_nearest_sampler),
-                },
-            ],
-        });
-
-        let repeat_linear_sampler = device.create_sampler(&wgpu::SamplerDescriptor {
-            label: Some("Repeat Linear Sampler"),
-            address_mode_u: wgpu::AddressMode::Repeat,
-            address_mode_v: wgpu::AddressMode::Repeat,
-            mag_filter: wgpu::FilterMode::Linear,
-            min_filter: wgpu::FilterMode::Linear,
-            mipmap_filter: wgpu::FilterMode::Nearest,
-            ..Default::default()
-        });
-
-        let repeat_linear_bind_group = device.create_bind_group(&wgpu::BindGroupDescriptor {
-            label: Some("Repeat Linear Bind Group"),
-            layout: &texture_bind_group_layout,
-            entries: &[
-                wgpu::BindGroupEntry {
-                    binding: 0,
-                    resource: wgpu::BindingResource::TextureView(&diffuse_texture.view),
-                },
-                wgpu::BindGroupEntry {
-                    binding: 1,
-                    resource: wgpu::BindingResource::Sampler(&repeat_linear_sampler),
-                },
-            ],
-        });
+        let sampler_lab_cases = vec![
+            create_sampler_lab_case(
+                &device,
+                &texture_bind_group_layout,
+                &diffuse_texture.view,
+                "Repeat Nearest Sampler",
+                "Repeat Nearest Bind Group",
+                wgpu::AddressMode::Repeat,
+                wgpu::FilterMode::Nearest,
+                wgpu::FilterMode::Nearest,
+            ),
+            create_sampler_lab_case(
+                &device,
+                &texture_bind_group_layout,
+                &diffuse_texture.view,
+                "Mirror Nearest Sampler",
+                "Mirror Nearest Bind Group",
+                wgpu::AddressMode::MirrorRepeat,
+                wgpu::FilterMode::Nearest,
+                wgpu::FilterMode::Nearest,
+            ),
+            create_sampler_lab_case(
+                &device,
+                &texture_bind_group_layout,
+                &diffuse_texture.view,
+                "Repeat Linear Sampler",
+                "Repeat Linear Bind Group",
+                wgpu::AddressMode::Repeat,
+                wgpu::FilterMode::Linear,
+                wgpu::FilterMode::Linear,
+            ),
+            create_sampler_lab_case(
+                &device,
+                &texture_bind_group_layout,
+                &diffuse_texture.view,
+                "Clamp Linear Sampler",
+                "Clamp Linear Bind Group",
+                wgpu::AddressMode::ClampToEdge,
+                wgpu::FilterMode::Linear,
+                wgpu::FilterMode::Nearest,
+            ),
+        ];
 
         // A pipeline layout declares bind-group resources like uniforms, textures and samplers.
         // Vertex/index buffers are not bind groups; they are configured separately in
@@ -314,7 +296,7 @@ impl Renderer {
             cache: None,
         });
 
-        let (vertices, indices) = create_vertices_for_quads(NUMBER_QUADS);
+        let (vertices, indices) = create_vertices_for_quads(NUMBER_QUADS as i32);
 
         let vertex_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
             label: Some("Vertex Buffer"),
@@ -338,14 +320,7 @@ impl Renderer {
             vertex_buffer,
             index_buffer,
             _diffuse_texture: diffuse_texture,
-            clamp_linear_bind_group,
-            _clamp_linear_sampler: clamp_linear_sampler,
-            repeat_nearest_bind_group,
-            _repeat_nearest_sampler: repeat_nearest_sampler,
-            mirror_nearest_bind_group,
-            _mirror_nearest_sampler: mirror_nearest_sampler,
-            repeat_linear_bind_group,
-            _repeat_linear_sampler: repeat_linear_sampler,
+            sampler_lab_cases,
         }
     }
 
@@ -438,18 +413,11 @@ impl Renderer {
             render_pass.set_vertex_buffer(0, self.vertex_buffer.slice(..));
             render_pass.set_index_buffer(self.index_buffer.slice(..), wgpu::IndexFormat::Uint16);
 
-            for quad_index in 0..NUMBER_QUADS {
+            for (quad_index, lab_case) in self.sampler_lab_cases.iter().enumerate() {
                 let start = (quad_index * 6) as u32;
                 let end = start + 6;
 
-                match quad_index {
-                    0 => render_pass.set_bind_group(0, &self.repeat_nearest_bind_group, &[]),
-                    1 => render_pass.set_bind_group(0, &self.mirror_nearest_bind_group, &[]),
-                    2 => render_pass.set_bind_group(0, &self.repeat_linear_bind_group, &[]),
-                    3 => render_pass.set_bind_group(0, &self.clamp_linear_bind_group, &[]),
-                    _ => unreachable!(),
-                }
-
+                render_pass.set_bind_group(0, &lab_case.bind_group, &[]);
                 render_pass.draw_indexed(start..end, 0, 0..1);
             }
         }
