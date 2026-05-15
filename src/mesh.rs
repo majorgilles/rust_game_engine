@@ -4,8 +4,6 @@
 //! `@location` inputs. The renderer uploads `VERTICES` and `INDICES` into GPU
 //! buffers and draws them with one indexed draw call.
 
-const VERTICES_COUNT_PER_QUAD: usize = 4;
-
 // Chapter 5 variation: UVs go past 1.0 so sampler address modes can tile/mirror the texture.
 
 #[repr(C)]
@@ -30,14 +28,6 @@ impl Vertex {
 
 fn compute_stride(number_of_quads: i32) -> f32 {
     1.0 / ((number_of_quads as f32).sqrt() / 2.0)
-}
-
-fn map_clip_x_to_uv_x(clip_x: f32) -> f32 {
-    (clip_x + 1.0) * 0.5
-}
-
-fn map_clip_y_to_uv_y(clip_y: f32) -> f32 {
-    (1.0 - clip_y) * 0.5
 }
 
 fn push_quad(

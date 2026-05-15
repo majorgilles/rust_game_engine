@@ -12,6 +12,8 @@ use std::sync::Arc;
 use wgpu::util::DeviceExt;
 use winit::window::Window;
 
+const NUMBER_QUADS: i32 = 4;
+
 /// All long-lived rendering state components. Built once in `resumed`, lives until exit.
 pub struct Renderer {
     /// The OS window. `Arc` because the Surface also keeps a handle to it —
@@ -220,7 +222,7 @@ impl Renderer {
             cache: None,
         });
 
-        let (vertices, indices) = create_vertices_for_quads(4);
+        let (vertices, indices) = create_vertices_for_quads(NUMBER_QUADS);
 
         let vertex_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
             label: Some("Vertex Buffer"),
@@ -340,7 +342,12 @@ impl Renderer {
             render_pass.set_bind_group(0, &self.diffuse_bind_group, &[]);
             render_pass.set_vertex_buffer(0, self.vertex_buffer.slice(..));
             render_pass.set_index_buffer(self.index_buffer.slice(..), wgpu::IndexFormat::Uint16);
-            render_pass.draw_indexed(0..self.num_indices, 0, 0..1); // 0..1 <- draw 1 instance of the object
+
+            for quad_index in 0..NUMBER_QUADS {
+                let start = (quad_index * 6) as u32;
+                let end = start + 6;
+                render_pass.draw_indexed(start..end, 0, 0..1);
+            }
         }
 
         // 3. Submit. The queue runs the recorded commands on the GPU.
