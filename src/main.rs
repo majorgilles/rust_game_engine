@@ -4,6 +4,7 @@
 //! event loop, and hand control to the app module.
 
 mod app;
+mod camera;
 mod mesh;
 mod renderer;
 mod texture;
