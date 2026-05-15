@@ -102,25 +102,22 @@ pub fn create_vertices_for_quads(number_of_quads: i32) -> (Vec<Vertex>, Vec<u16>
         }
     }
 
-    let uv_bounds: Vec<QuadBounds> = vertex_bounds
-        .iter()
-        .map(|bounds| QuadBounds {
-            left: map_clip_x_to_uv_x(bounds.left),
-            right: map_clip_x_to_uv_x(bounds.right),
-            bottom: map_clip_y_to_uv_y(bounds.bottom),
-            top: map_clip_y_to_uv_y(bounds.top),
-        })
-        .collect();
-
     let mut vertices = Vec::<Vertex>::new();
     let mut indices = Vec::<u16>::new();
 
-    vertex_bounds
-        .iter()
-        .zip(uv_bounds.iter())
-        .for_each(|(bounds, uv_bounds)| {
-            push_quad(&mut vertices, &mut indices, &bounds, &uv_bounds)
-        });
+    vertex_bounds.iter().for_each(|bounds| {
+        push_quad(
+            &mut vertices,
+            &mut indices,
+            &bounds,
+            &QuadBounds {
+                left: 0.0,
+                right: 3.0,
+                bottom: 3.0,
+                top: 0.0,
+            },
+        )
+    });
     (vertices, indices)
 }
 
@@ -136,35 +133,23 @@ mod tests {
     }
 
     #[test]
-    fn test_map_clip_x_to_uv_x() {
-        assert_eq!(map_clip_x_to_uv_x(-1.0), 0.0);
-        assert_eq!(map_clip_x_to_uv_x(1.0), 1.0);
-    }
-
-    #[test]
-    fn test_map_clip_y_to_uv_y() {
-        assert_eq!(map_clip_y_to_uv_y(-1.0), 1.0);
-        assert_eq!(map_clip_y_to_uv_y(1.0), 0.0);
-    }
-
-    #[test]
     fn test_create_vertices_for_quads() {
         // given
         let expected_vertices: &[Vertex] = &[
             Vertex {
                 // bottom-left
                 position: [-1.0, -1.0, 0.0],
-                texture_coordinates: [0.0, 1.0],
+                texture_coordinates: [0.0, 3.0],
             },
             Vertex {
                 // bottom-right
                 position: [1.0, -1.0, 0.0],
-                texture_coordinates: [1.0, 1.0],
+                texture_coordinates: [3.0, 3.0],
             },
             Vertex {
                 // top-right
                 position: [1.0, 1.0, 0.0],
-                texture_coordinates: [1.0, 0.0],
+                texture_coordinates: [3.0, 0.0],
             },
             Vertex {
                 // top-left
@@ -180,5 +165,79 @@ mod tests {
         // then
         assert_eq!(vertices, expected_vertices);
         assert_eq!(indices, expected_indices);
+    }
+
+    #[test]
+    fn test_create_vertices_for_16_quads() {
+        // when
+        let (vertices, indices) = create_vertices_for_quads(16);
+
+        // then: 16 quads * 4 vertices each
+        assert_eq!(vertices.len(), 64);
+
+        // 16 quads * 6 indices each
+        assert_eq!(indices.len(), 96);
+
+        // first quad: bottom-left of the grid
+        assert_eq!(
+            vertices[0],
+            Vertex {
+                position: [-1.0, -1.0, 0.0],
+                texture_coordinates: [0.0, 3.0],
+            }
+        );
+        assert_eq!(
+            vertices[1],
+            Vertex {
+                position: [-0.5, -1.0, 0.0],
+                texture_coordinates: [3.0, 3.0],
+            }
+        );
+        assert_eq!(
+            vertices[2],
+            Vertex {
+                position: [-0.5, -0.5, 0.0],
+                texture_coordinates: [3.0, 0.0],
+            }
+        );
+        assert_eq!(
+            vertices[3],
+            Vertex {
+                position: [-1.0, -0.5, 0.0],
+                texture_coordinates: [0.0, 0.0],
+            }
+        );
+        assert_eq!(&indices[0..6], &[0, 1, 2, 0, 2, 3]);
+
+        // last quad: top-right of the grid
+        assert_eq!(
+            vertices[60],
+            Vertex {
+                position: [0.5, 0.5, 0.0],
+                texture_coordinates: [0.0, 3.0],
+            }
+        );
+        assert_eq!(
+            vertices[61],
+            Vertex {
+                position: [1.0, 0.5, 0.0],
+                texture_coordinates: [3.0, 3.0],
+            }
+        );
+        assert_eq!(
+            vertices[62],
+            Vertex {
+                position: [1.0, 1.0, 0.0],
+                texture_coordinates: [3.0, 0.0],
+            }
+        );
+        assert_eq!(
+            vertices[63],
+            Vertex {
+                position: [0.5, 1.0, 0.0],
+                texture_coordinates: [0.0, 0.0],
+            }
+        );
+        assert_eq!(&indices[90..96], &[60, 61, 62, 60, 62, 63]);
     }
 }
