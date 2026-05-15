@@ -1,82 +1,67 @@
-//! Chapter 3: drawing a single triangle via a render pipeline.
+//! Rendering backend for the current chapter.
 //!
-//! The wgpu pipeline at a glance:
-//!
-//!   Window  ─►  Surface  ─►  Adapter (a GPU)  ─►  Device + Queue
-//!
-//! Each frame we acquire a texture from the Surface, record a render pass
-//! that clears it to a color, submit the commands, then present the frame.
-//!
-//! # How does an image actually end up on the screen?
-//!
-//! The high-level story: the CPU records a list of commands and hands them
-//! to the GPU. The GPU runs them in parallel, writing colors into a texture.
-//! The OS then "presents" that texture to the monitor in sync with the display.
-//!
-//! # Why building a pipeline feels verbose
-//!
-//! A render pipeline is the GPU's promise that *everything matches*:
-//! vertex shader output → fragment shader input, fragment output format →
-//! render target format, vertex buffer layout → vertex shader inputs, and
-//! so on. If any of those don't line up, wgpu rejects the pipeline at
-//! creation time with a clear message.
-//!
-//! That up-front strictness is why a pipeline descriptor has so many fields:
-//! it's catching mistakes that would otherwise show up later as a black
-//! screen, garbled colors, or a mysterious crash with no explanation.
-//! Verbose now, debuggable forever.
-//!
-//! ## Recommended reading (start here)
-//!
-//! - **Learn Wgpu — Tutorial 3: The Pipeline**
-//!   <https://sotrh.github.io/learn-wgpu/beginner/tutorial3-pipeline/>
-//!   The chapter this example follows. Walks through writing the shader,
-//!   building a render pipeline, and issuing the draw call for one triangle.
-//!
-//! - **WebGPU Fundamentals — "Inter-stage variables"**
-//!   <https://webgpufundamentals.org/webgpu/lessons/webgpu-inter-stage-variables.html>
-//!   Beginner intro to *what a vertex shader and fragment shader actually do*,
-//!   and how data flows from one to the other. Same concepts as wgpu, easier prose.
-//!
-//! - **WGSL Tour (interactive)**
-//!   <https://google.github.io/tour-of-wgsl/>
-//!   Bite-sized lessons on WGSL, the shader language we're about to write.
-//!   Skim "Hello WGSL" and "Functions" — that's enough for this chapter.
-//!
-//! - **wgpu examples — `hello_triangle`**
-//!   <https://github.com/gfx-rs/wgpu/tree/trunk/examples/features/src/hello_triangle>
-//!   The official wgpu "draw one triangle" example. Useful as a second
-//!   reference when our code feels unclear — small enough to read end-to-end.
-//!
-//! For deeper dives (graphics pipeline internals, real-engine renderers,
-//! shader programming), see `FURTHER_READING.md` at the project root.
-//!
-//! ## Glossary mapping (this file → industry terms)
-//!
-//! | This file                    | What it's called elsewhere                   |
-//! |------------------------------|----------------------------------------------|
-//! | `ShaderModule`               | compiled shader / shader blob                |
-//! | `RenderPipeline`             | pipeline state object (PSO in D3D)           |
-//! | vertex shader (`vs_main`)    | vertex stage / vertex program                |
-//! | fragment shader (`fs_main`)  | fragment stage / pixel shader (D3D)          |
-//! | `@builtin(position)`         | clip-space position / `gl_Position` in GLSL  |
-//! | `draw(0..3, 0..1)`           | non-indexed draw call                        |
+//! This module owns the long-lived `wgpu` objects: surface, device, queue,
+//! pipeline, and GPU buffers. `App` tells it when the window resizes or when a
+//! frame should be rendered; everything below that boundary is rendering work.
 
+use crate::mesh::{Vertex, create_vertices_for_quads};
+use crate::texture::Texture;
 use pollster::FutureExt;
 use std::iter::once;
 use std::sync::Arc;
-use winit::application::ApplicationHandler;
-use winit::dpi::{PhysicalPosition, PhysicalSize};
-use winit::event::{ElementState, KeyEvent, WindowEvent};
-use winit::event_loop::{ActiveEventLoop, EventLoop};
-use winit::keyboard::{Key, NamedKey};
-use winit::window::{Window, WindowId};
+use wgpu::util::DeviceExt;
+use winit::window::Window;
 
-const WIDTH: u32 = 1280;
-const HEIGHT: u32 = 720;
+const NUMBER_QUADS: usize = 4;
 
-/// All long-lived rendering state. Built once in `resumed`, lives until exit.
-struct State {
+struct SamplerLabCase {
+    bind_group: wgpu::BindGroup,
+    _sampler: wgpu::Sampler,
+}
+
+fn create_sampler_lab_case(
+    device: &wgpu::Device,
+    layout: &wgpu::BindGroupLayout,
+    texture_view: &wgpu::TextureView,
+    sampler_label: &str,
+    bind_group_label: &str,
+    address_mode: wgpu::AddressMode,
+    mag_filter: wgpu::FilterMode,
+    min_filter: wgpu::FilterMode,
+) -> SamplerLabCase {
+    let sampler = device.create_sampler(&wgpu::SamplerDescriptor {
+        label: Some(sampler_label),
+        address_mode_u: address_mode,
+        address_mode_v: address_mode,
+        mag_filter,
+        min_filter,
+        mipmap_filter: wgpu::FilterMode::Nearest,
+        ..Default::default()
+    });
+
+    let bind_group = device.create_bind_group(&wgpu::BindGroupDescriptor {
+        label: Some(bind_group_label),
+        layout,
+        entries: &[
+            wgpu::BindGroupEntry {
+                binding: 0,
+                resource: wgpu::BindingResource::TextureView(texture_view),
+            },
+            wgpu::BindGroupEntry {
+                binding: 1,
+                resource: wgpu::BindingResource::Sampler(&sampler),
+            },
+        ],
+    });
+
+    SamplerLabCase {
+        bind_group,
+        _sampler: sampler,
+    }
+}
+
+/// All long-lived rendering state components. Built once in `resumed`, lives until exit.
+pub struct Renderer {
     /// The OS window. `Arc` because the Surface also keeps a handle to it —
     /// shared ownership is how we promise wgpu that the window outlives the surface.
     window: Arc<Window>,
@@ -101,20 +86,26 @@ struct State {
     /// Re-applied via `surface.configure` whenever the window resizes.
     surface_configuration: wgpu::SurfaceConfiguration,
 
-    /// The compiled shader + pipeline settings the GPU uses to draw our triangle.
+    /// The compiled shader and pipeline settings the GPU uses to draw our shapes.
     /// Built once in `new`, bound at the start of every render pass.
     render_pipeline: wgpu::RenderPipeline,
+
+    vertex_buffer: wgpu::Buffer,
+    index_buffer: wgpu::Buffer,
+
+    _diffuse_texture: Texture,
+    sampler_lab_cases: Vec<SamplerLabCase>,
 }
 
-impl State {
+impl Renderer {
     /// Build all wgpu state. Async work (adapter/device requests) is run synchronously
-    /// here via `pollster`'s `block_on`, since this example has no async runtime.
-    fn new(window: Arc<Window>) -> Self {
+    /// here via `pollster`'s `block_on`, since this app has no async runtime.
+    pub fn new(window: Arc<Window>) -> Self {
         // `default()` lets wgpu pick whichever backend the OS prefers (Vulkan/DX12/Metal).
         let instance_descriptor = wgpu::InstanceDescriptor::default();
         let instance = wgpu::Instance::new(&instance_descriptor);
 
-        // Cloning an Arc just bumps a refcount; surface and State both end up
+        // Cloning an Arc just bumps a refcount; surface and Renderer both end up
         // holding the same window.
         let surface = instance
             .create_surface(window.clone())
@@ -176,16 +167,87 @@ impl State {
         // Compile the WGSL into a shader module the GPU can run.
         // `include_str!` reads the .wgsl file at compile time and embeds it as a string.
         let shader = device.create_shader_module(wgpu::ShaderModuleDescriptor {
-            label: Some("Triangle Shader"),
-            source: wgpu::ShaderSource::Wgsl(include_str!("ch03_pipeline.wgsl").into()), // into() converts &str from include_str! to Cow that Wgsl(...) expects
+            label: Some("Main Shader"),
+            source: wgpu::ShaderSource::Wgsl(include_str!("shader.wgsl").into()), // into() converts &str from include_str! to Cow that Wgsl(...) expects
         });
 
-        // A pipeline layout declares what *resources* (buffers, textures, samplers) the shader will
-        // read from. Our shader reads nothing yet, it computes positions from `vertex_index` and
-        // outputs a hardcoded color, so the layout is empty.
+        let texture_bind_group_layout =
+            device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
+                label: Some("Texture Bind Group Layout"),
+                entries: &[
+                    wgpu::BindGroupLayoutEntry {
+                        binding: 0,
+                        visibility: wgpu::ShaderStages::FRAGMENT,
+                        ty: wgpu::BindingType::Texture {
+                            multisampled: false,
+                            view_dimension: wgpu::TextureViewDimension::D2,
+                            sample_type: wgpu::TextureSampleType::Float { filterable: true },
+                        },
+                        count: None,
+                    },
+                    wgpu::BindGroupLayoutEntry {
+                        binding: 1,
+                        visibility: wgpu::ShaderStages::FRAGMENT,
+                        ty: wgpu::BindingType::Sampler(wgpu::SamplerBindingType::Filtering),
+                        count: None,
+                    },
+                ],
+            });
+
+        let diffuse_bytes = include_bytes!("../assets/happy-tree.png");
+        let diffuse_texture = Texture::from_bytes(&device, &queue, diffuse_bytes, "happy-tree.png")
+            .expect("Failed to load diffuse texture");
+
+        let sampler_lab_cases = vec![
+            create_sampler_lab_case(
+                &device,
+                &texture_bind_group_layout,
+                &diffuse_texture.view,
+                "Repeat Nearest Sampler",
+                "Repeat Nearest Bind Group",
+                wgpu::AddressMode::Repeat,
+                wgpu::FilterMode::Nearest,
+                wgpu::FilterMode::Nearest,
+            ),
+            create_sampler_lab_case(
+                &device,
+                &texture_bind_group_layout,
+                &diffuse_texture.view,
+                "Mirror Nearest Sampler",
+                "Mirror Nearest Bind Group",
+                wgpu::AddressMode::MirrorRepeat,
+                wgpu::FilterMode::Nearest,
+                wgpu::FilterMode::Nearest,
+            ),
+            create_sampler_lab_case(
+                &device,
+                &texture_bind_group_layout,
+                &diffuse_texture.view,
+                "Repeat Linear Sampler",
+                "Repeat Linear Bind Group",
+                wgpu::AddressMode::Repeat,
+                wgpu::FilterMode::Linear,
+                wgpu::FilterMode::Linear,
+            ),
+            create_sampler_lab_case(
+                &device,
+                &texture_bind_group_layout,
+                &diffuse_texture.view,
+                "Clamp Linear Sampler",
+                "Clamp Linear Bind Group",
+                wgpu::AddressMode::ClampToEdge,
+                wgpu::FilterMode::Linear,
+                wgpu::FilterMode::Nearest,
+            ),
+        ];
+
+        // A pipeline layout declares bind-group resources like uniforms, textures and samplers.
+        // Vertex/index buffers are not bind groups; they are configured separately in
+        // `vertex.buffers` and bound in the render pass. We use no bind groups yet, so this is
+        // empty.
         let pipeline_layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
-            label: Some("Triangle Pipeline Layout"),
-            bind_group_layouts: &[], // groups of resources
+            label: Some("Main Pipeline Layout"),
+            bind_group_layouts: &[&texture_bind_group_layout],
             push_constant_ranges: &[],
         });
 
@@ -193,14 +255,14 @@ impl State {
         // stage, which runs at the fragment stage, what shape the input is, what the
         // output color format is, and how triangles are turned into pixels.
         let render_pipeline = device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
-            label: Some("Triangle Pipeline"),
+            label: Some("Buffers Pipeline"),
             layout: Some(&pipeline_layout),
 
             // ---- Vertex stage ----
             vertex: wgpu::VertexState {
                 module: &shader,
                 entry_point: Some("vs_main"),
-                buffers: &[], // "no vertex buffers." We don't pass any vertex data from the CPU
+                buffers: &[Vertex::desc()],
                 compilation_options: wgpu::PipelineCompilationOptions::default(),
             },
 
@@ -229,9 +291,23 @@ impl State {
 
             // no depth buffer or MSAA yet - keep it minimal
             depth_stencil: None, // no depth testing yet. We'll add it when we draw 3D meshes that overlap
-            multisample: wgpu::MultisampleState::default(), // anti-aliasing off (samples = 1). Default is fine
+            multisample: wgpu::MultisampleState::default(), // antialiasing off (samples = 1). Default is fine
             multiview: None,
             cache: None,
+        });
+
+        let (vertices, indices) = create_vertices_for_quads(NUMBER_QUADS as i32);
+
+        let vertex_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
+            label: Some("Vertex Buffer"),
+            contents: bytemuck::cast_slice(&vertices),
+            usage: wgpu::BufferUsages::VERTEX,
+        });
+
+        let index_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
+            label: Some("Index Buffer"),
+            contents: bytemuck::cast_slice(&indices),
+            usage: wgpu::BufferUsages::INDEX,
         });
 
         Self {
@@ -241,13 +317,17 @@ impl State {
             queue,
             surface_configuration,
             render_pipeline,
+            vertex_buffer,
+            index_buffer,
+            _diffuse_texture: diffuse_texture,
+            sampler_lab_cases,
         }
     }
 
     /// Update the surface to match the new window size.
     /// The surface's image buffers were sized for the old window — without this they'd
     /// either crash wgpu or stretch a stale image across the new window.
-    fn resize(&mut self, width: u32, height: u32) {
+    pub fn resize(&mut self, width: u32, height: u32) {
         // Minimizing fires a resize with (0, 0). Configuring a 0-sized surface is a
         // wgpu validation error, so skip it; the next resize (un-minimize) will reconfigure.
         if width == 0 || height == 0 {
@@ -266,10 +346,10 @@ impl State {
     ///   2. **Encode** — record GPU commands into a CommandEncoder.
     ///   3. **Submit** — hand the recorded commands to the queue.
     ///   4. **Present** — tell the OS to display the finished frame.
-    fn render(&mut self) {
+    pub fn render(&mut self) {
         // 1. Acquire. The surface hands us the next texture to render into.
-        // Lost/Outdated typically follow a resize or wake-from-sleep — recover by reconfiguring
-        // and dropping this frame.
+        // Lost/Outdated textures typically follow a resize or wake-from-sleep —
+        // recover by reconfiguring and dropping this frame.
         let frame = match self.surface.get_current_texture() {
             Ok(frame) => frame,
             Err(wgpu::SurfaceError::Lost | wgpu::SurfaceError::Outdated) => {
@@ -330,83 +410,24 @@ impl State {
             };
             let mut render_pass = encoder.begin_render_pass(&descriptor);
             render_pass.set_pipeline(&self.render_pipeline);
-            render_pass.draw(0..3, 0..1); // we hard code vertices 0, 1, 2, and we draw 1 instance, 1 triangle
+            render_pass.set_vertex_buffer(0, self.vertex_buffer.slice(..));
+            render_pass.set_index_buffer(self.index_buffer.slice(..), wgpu::IndexFormat::Uint16);
+
+            for (quad_index, lab_case) in self.sampler_lab_cases.iter().enumerate() {
+                let start = (quad_index * 6) as u32;
+                let end = start + 6;
+
+                render_pass.set_bind_group(0, &lab_case.bind_group, &[]);
+                render_pass.draw_indexed(start..end, 0, 0..1);
+            }
         }
 
         // 3. Submit. The queue runs the recorded commands on the GPU.
         let command_buffer = encoder.finish();
         self.queue.submit(once(command_buffer));
-        // 4. Present. Without this, the GPU drew but the OS never shows it.
+        // 4. Present. Without this, the GPU drew the image, but the OS never shows it.
         frame.present();
         // Ask winit for another RedrawRequested so we keep rendering continuously.
         self.window.request_redraw();
     }
-}
-
-/// The winit application handler. Holds rendering state in an Option because
-/// the window (and therefore the wgpu state) only exists between `resumed` and
-/// `suspended` — on platforms like Android the OS can drop them out from under us.
-#[derive(Default)]
-struct App {
-    state: Option<State>,
-}
-
-impl ApplicationHandler for App {
-    fn resumed(&mut self, event_loop: &ActiveEventLoop) {
-        if self.state.is_some() {
-            return;
-        }
-
-        let window_attributes = Window::default_attributes()
-            .with_title("Rust Game Engine - ch03")
-            .with_inner_size(PhysicalSize::new(WIDTH, HEIGHT));
-
-        self.state = {
-            let window = event_loop
-                .create_window(window_attributes)
-                .expect("Failed to create window");
-            let window_ref = Arc::new(window);
-            Some(State::new(window_ref))
-        }
-    }
-
-    fn window_event(
-        &mut self,
-        event_loop: &ActiveEventLoop,
-        _window_id: WindowId,
-        event: WindowEvent,
-    ) {
-        match event {
-            WindowEvent::CloseRequested => event_loop.exit(),
-            WindowEvent::Resized(physical_size) => {
-                if let Some(state) = self.state.as_mut() {
-                    state.resize(physical_size.width, physical_size.height)
-                }
-            }
-            WindowEvent::RedrawRequested => {
-                if let Some(state) = self.state.as_mut() {
-                    state.render()
-                }
-            }
-            WindowEvent::KeyboardInput {
-                event:
-                    KeyEvent {
-                        // this pattern is a filter that triggers if the Escape key is pressed ONLY
-                        state: ElementState::Pressed,
-                        logical_key: Key::Named(NamedKey::Escape),
-                        ..
-                    },
-                ..
-            } => event_loop.exit(),
-            _ => {}
-        }
-    }
-}
-
-fn main() {
-    env_logger::init(); // turns on logging output. wgpu will use it later
-    let event_loop = EventLoop::new().expect("Failed to create event loop");
-    let mut app = App::default();
-
-    event_loop.run_app(&mut app).expect("Event loop crashed.")
 }
