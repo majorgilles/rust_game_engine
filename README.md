@@ -78,7 +78,13 @@ These assume basic Rust knowledge, no prior graphics experience, and the type-al
 | **Phase 2b total** | | **30–52** |
 | **Project total** | | **108–183** |
 
-At a sustained ~10 hours/week, that's roughly **3–4.5 months** to v1. At ~5 hours/week, **5–9 months**. Real time will skew higher than the estimates — every estimate ever written has.
+Global estimate for the full cursus: **108–183 hours** of focused work. At a sustained ~10 hours/week, that's roughly **3–4.5 months** to v1. At ~5 hours/week, **5–9 months**. Real time will skew higher than the estimates — every estimate ever written has.
+
+## Achieved expertise level at the end of the cursus
+
+By the end of v1, you should be an **early-intermediate Rust/wgpu graphics programmer**: comfortable with the GPU render loop, surfaces, pipelines, buffers, textures, bind groups, camera math, depth, model loading, lighting, normal mapping, HDR/tone mapping, input, and a small real-time game loop.
+
+You will not yet be a production engine developer, but you should be able to read real renderer code without getting lost, build small 3D experiments, debug common `wgpu` validation errors, and make informed next-step architecture choices for a larger engine or game.
 
 ## Stack
 
