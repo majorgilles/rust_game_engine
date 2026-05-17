@@ -1,0 +1,751 @@
+{
+  "schema": "github-issues-recreate.v1",
+  "source_repo": "majorgilles/rust_game_engine",
+  "source_url": "https://github.com/majorgilles/rust_game_engine",
+  "exported_at": "2026-05-17T10:24:08Z",
+  "issue_count": 19,
+  "source_root_commit": "854815b7729089fa7cf292a1bc151aae1ba27df2",
+  "intended_initial_tag": "project-start",
+  "recreate_script": "scripts/recreate_github_issues.py",
+  "notes": [
+    "Issues are sorted by original issue number.",
+    "Recreate into an empty target repository if you want new issue numbers to match the originals.",
+    "GitHub does not preserve original issue/comment timestamps or authors when recreating through gh; those values are retained here as reference metadata.",
+    "Closed issues should be created first, restored with comments, and then closed; the companion script does this automatically."
+  ],
+  "issues": [
+    {
+      "assignees": [],
+      "author": {
+        "id": "MDQ6VXNlcjUwMDgyMDA=",
+        "is_bot": false,
+        "login": "majorgilles",
+        "name": "Gilles Major"
+      },
+      "body": "## Goal, in plain English\n\nOpen a normal desktop window. That is it. No real graphics yet.\n\nTutorial: https://sotrh.github.io/learn-wgpu/beginner/tutorial1-window/\n\nThis lives at `examples/ch01_window.rs`.\n\n## What you are learning\n\n- `winit` = the Rust library that creates a window and receives keyboard/mouse/window events.\n- `wgpu` = the Rust graphics library we will use later to draw with the GPU.\n- `env_logger` = prints useful log messages while the program runs.\n- `State` = a struct where we keep app data. For now it mostly holds the window.\n- `resize()` = code that runs when the window size changes.\n- `render()` = code that will draw a frame later. For this issue, it can be an empty placeholder.\n\n## What to build\n\n1. Add the needed dependencies from Learn Wgpu chapter 1.\n2. Make `examples/ch01_window.rs`.\n3. Open a native desktop window.\n4. Give the window your own title.\n5. Start the window at a non-default size, for example `1280x720`.\n6. Make closing the window work.\n7. Make pressing `Escape` close the program.\n8. Make a `State` struct that stores the window, for example `Arc<Window>`.\n9. Add empty `resize(w, h)` and `render()` methods so later chapters have a place to grow.\n10. Wire `WindowEvent::Resized` and `WindowEvent::RedrawRequested` through `ApplicationHandler`.\n\n## Do not build this yet\n\nSkip all browser / WebAssembly work.\n\nThat means you do **not** need:\n\n- `wasm-pack`\n- `wasm-bindgen`\n- `web-sys`\n- `console_log`\n- `run_web()`\n- any `cfg(target_arch = \"wasm32\")` code\n- any browser build setup\n\nThis project is desktop-only for now.\n\n## Done when\n\n- [ ] `cargo run --example ch01_window` opens a window\n- [ ] Window has your custom title and a non-default starting size\n- [ ] Closing the window exits cleanly\n- [ ] Pressing `Escape` exits cleanly\n- [ ] There are no warnings about missing `winit` features you should have enabled\n- [ ] A `State` struct holds the window and has `resize(w, h)` and `render()` stubs\n- [ ] `WindowEvent::Resized` and `WindowEvent::RedrawRequested` are handled through `ApplicationHandler`\n\n## Depends on\n\nNothing. Start here.\n\n## Time estimate\n\nLocal estimate: **2–4 hours** of focused work.\n\nAssumes basic Rust knowledge, no prior graphics experience, and the type-along + small-variation working pattern. This is a local estimate for this issue only; see `README.md` for the global cursus estimate.\n",
+      "closedAt": "2026-05-09T19:19:59Z",
+      "comments": [
+        {
+          "id": "IC_kwDOSY0Wwc8AAAABBwfU4g",
+          "author": {
+            "login": "majorgilles"
+          },
+          "authorAssociation": "OWNER",
+          "body": "**Estimated effort:** 2-4 hours",
+          "createdAt": "2026-05-09T15:52:44Z",
+          "includesCreatedEdit": false,
+          "isMinimized": false,
+          "minimizedReason": "",
+          "reactionGroups": [],
+          "url": "https://github.com/majorgilles/rust_game_engine/issues/1#issuecomment-4412921058",
+          "viewerDidAuthor": true
+        }
+      ],
+      "createdAt": "2026-05-09T15:48:30Z",
+      "labels": [],
+      "milestone": null,
+      "number": 1,
+      "state": "CLOSED",
+      "stateReason": "COMPLETED",
+      "title": "ch01: Dependencies and the window",
+      "updatedAt": "2026-05-16T21:47:50Z",
+      "url": "https://github.com/majorgilles/rust_game_engine/issues/1"
+    },
+    {
+      "assignees": [],
+      "author": {
+        "id": "MDQ6VXNlcjUwMDgyMDA=",
+        "is_bot": false,
+        "login": "majorgilles",
+        "name": "Gilles Major"
+      },
+      "body": "## Goal, in plain English\n\nMake the window clear itself to a color every frame.\n\nThis is the first tiny GPU step. You are not drawing shapes yet. You are just asking the GPU to fill the window with one color.\n\nTutorial: https://sotrh.github.io/learn-wgpu/beginner/tutorial2-surface/\n\nThis lives at `examples/ch02_surface.rs`.\n\n## What you are learning\n\n- `Surface` = the drawable part of the window. Think: \"the place the GPU paints into.\"\n- Adapter = the graphics hardware/backend `wgpu` chooses.\n- Device = the main object you use to create GPU resources.\n- Queue = the thing you use to send work to the GPU.\n- Clear color = the background color used to wipe the frame before drawing.\n- Validation error = `wgpu` telling you \"the GPU setup is wrong.\" Treat these as useful warnings, not scary magic.\n\n## What to build\n\n1. Follow Learn Wgpu chapter 2.\n2. Create the `wgpu` surface for the window.\n3. Request an adapter and device.\n4. Configure the surface.\n5. Every frame, clear the window to a solid color.\n6. Handle window resizing without crashing.\n7. Reuse the window setup from chapter 1 if it helps.\n\n## Extra beginner-friendly variation\n\nMake the background color react to the mouse position:\n\n- mouse x position controls red\n- mouse y position controls green\n- blue stays constant\n\nSo moving the mouse should smoothly change the window color.\n\n## Done when\n\n- [ ] `cargo run --example ch02_surface` opens a window with a colored background\n- [ ] Resizing the window does not panic or crash\n- [ ] Moving the mouse over the window changes the clear color smoothly\n- [ ] Closing the window exits cleanly\n- [ ] No `wgpu` validation errors appear at startup or during resize\n\nTip: run with logging, for example:\n\n```bash\nRUST_LOG=wgpu_core=warn,wgpu_hal=warn cargo run --example ch02_surface\n```\n\n## Depends on\n\nFinish #1 first.\n\n## Time estimate\n\nLocal estimate: **4–8 hours** of focused work.\n\nAssumes basic Rust knowledge, no prior graphics experience, and the type-along + small-variation working pattern. This is a local estimate for this issue only; see `README.md` for the global cursus estimate.\n",
+      "closedAt": "2026-05-10T10:02:04Z",
+      "comments": [
+        {
+          "id": "IC_kwDOSY0Wwc8AAAABBwfU_Q",
+          "author": {
+            "login": "majorgilles"
+          },
+          "authorAssociation": "OWNER",
+          "body": "**Estimated effort:** 4-8 hours",
+          "createdAt": "2026-05-09T15:52:45Z",
+          "includesCreatedEdit": false,
+          "isMinimized": false,
+          "minimizedReason": "",
+          "reactionGroups": [],
+          "url": "https://github.com/majorgilles/rust_game_engine/issues/2#issuecomment-4412921085",
+          "viewerDidAuthor": true
+        }
+      ],
+      "createdAt": "2026-05-09T15:48:40Z",
+      "labels": [],
+      "milestone": null,
+      "number": 2,
+      "state": "CLOSED",
+      "stateReason": "COMPLETED",
+      "title": "ch02: The Surface",
+      "updatedAt": "2026-05-16T21:47:51Z",
+      "url": "https://github.com/majorgilles/rust_game_engine/issues/2"
+    },
+    {
+      "assignees": [],
+      "author": {
+        "id": "MDQ6VXNlcjUwMDgyMDA=",
+        "is_bot": false,
+        "login": "majorgilles",
+        "name": "Gilles Major"
+      },
+      "body": "## Goal, in plain English\n\nDraw one triangle.\n\nThis is the first time you make the GPU run your own shader code.\n\nTutorial: https://sotrh.github.io/learn-wgpu/beginner/tutorial3-pipeline/\n\nThis lives at `examples/ch03_pipeline.rs`.\n\n## What you are learning\n\n- Shader = small program that runs on the GPU.\n- WGSL = the shader language used by `wgpu`.\n- Vertex shader = decides where triangle points go on the screen.\n- Fragment shader = decides what color each pixel should be.\n- Render pipeline = the full GPU recipe for drawing something.\n- Screen-space x position = the pixel's horizontal position on the screen.\n\n## What to build\n\n1. Follow Learn Wgpu chapter 3.\n2. Write a WGSL vertex shader.\n3. Write a WGSL fragment shader.\n4. Create a render pipeline.\n5. Draw a single triangle.\n\n## Extra beginner-friendly variation\n\nMake the triangle use two solid colors:\n\n- left half = color A\n- right half = color B\n\nUse the fragment's screen x position to pick the color.\n\nIn plain English: if the pixel is on the left side of the triangle, paint it one color. If it is on the right side, paint it another color.\n\n## Done when\n\n- [ ] `cargo run --example ch03_pipeline` shows a triangle\n- [ ] The triangle is split vertically into two colors\n- [ ] No `wgpu` validation errors appear at startup\n\n## Depends on\n\nFinish #2 first.\n\n## Time estimate\n\nLocal estimate: **6–10 hours** of focused work.\n\nAssumes basic Rust knowledge, no prior graphics experience, and the type-along + small-variation working pattern. This is a local estimate for this issue only; see `README.md` for the global cursus estimate.\n",
+      "closedAt": "2026-05-10T15:11:11Z",
+      "comments": [
+        {
+          "id": "IC_kwDOSY0Wwc8AAAABBwfVJA",
+          "author": {
+            "login": "majorgilles"
+          },
+          "authorAssociation": "OWNER",
+          "body": "**Estimated effort:** 6-10 hours",
+          "createdAt": "2026-05-09T15:52:46Z",
+          "includesCreatedEdit": false,
+          "isMinimized": false,
+          "minimizedReason": "",
+          "reactionGroups": [],
+          "url": "https://github.com/majorgilles/rust_game_engine/issues/3#issuecomment-4412921124",
+          "viewerDidAuthor": true
+        }
+      ],
+      "createdAt": "2026-05-09T15:48:47Z",
+      "labels": [],
+      "milestone": null,
+      "number": 3,
+      "state": "CLOSED",
+      "stateReason": "COMPLETED",
+      "title": "ch03: The Pipeline",
+      "updatedAt": "2026-05-16T21:47:52Z",
+      "url": "https://github.com/majorgilles/rust_game_engine/issues/3"
+    },
+    {
+      "assignees": [],
+      "author": {
+        "id": "MDQ6VXNlcjUwMDgyMDA=",
+        "is_bot": false,
+        "login": "majorgilles",
+        "name": "Gilles Major"
+      },
+      "body": "## Goal, in plain English\n\nDraw a hexagon using vertex and index buffers.\n\nA hexagon is a 6-sided shape. The GPU still draws triangles, so you will build the hexagon out of 6 triangles.\n\nTutorial: https://sotrh.github.io/learn-wgpu/beginner/tutorial4-buffer/\n\nThis lives at `examples/ch04_buffers.rs`.\n\n## What you are learning\n\n- Vertex = one point in a shape. It can store position, color, texture coordinates, etc.\n- Vertex buffer = GPU memory that stores vertices.\n- Index buffer = GPU memory that says which vertices make each triangle.\n- Interpolation = the GPU smoothly blends values, like colors, between vertices.\n\n## What to build\n\n1. Follow Learn Wgpu chapter 4.\n2. Move triangle data into a vertex buffer.\n3. Add an index buffer.\n4. Draw a regular hexagon.\n5. Use 7 vertices total:\n   - 6 outer points\n   - 1 center point\n6. Use 18 indices total:\n   - 6 triangles\n   - 3 indices per triangle\n7. Give each vertex a different color so the hexagon has a smooth color gradient.\n\n## Simple mental model\n\nThink of the center vertex as the middle of a pizza. Each triangle is one pizza slice.\n\n## Done when\n\n- [ ] `cargo run --example ch04_buffers` shows a hexagon\n- [ ] An index buffer is used\n- [ ] The hexagon shows smooth color blending between vertices\n- [ ] Vertex count is 7\n- [ ] Index count is 18\n\n## Depends on\n\nFinish #3 first.\n\n## Time estimate\n\nLocal estimate: **5–8 hours** of focused work.\n\nAssumes basic Rust knowledge, no prior graphics experience, and the type-along + small-variation working pattern. This is a local estimate for this issue only; see `README.md` for the global cursus estimate.\n",
+      "closedAt": "2026-05-11T19:29:04Z",
+      "comments": [
+        {
+          "id": "IC_kwDOSY0Wwc8AAAABBwfVRA",
+          "author": {
+            "login": "majorgilles"
+          },
+          "authorAssociation": "OWNER",
+          "body": "**Estimated effort:** 5-8 hours",
+          "createdAt": "2026-05-09T15:52:47Z",
+          "includesCreatedEdit": false,
+          "isMinimized": false,
+          "minimizedReason": "",
+          "reactionGroups": [],
+          "url": "https://github.com/majorgilles/rust_game_engine/issues/4#issuecomment-4412921156",
+          "viewerDidAuthor": true
+        },
+        {
+          "id": "IC_kwDOSY0Wwc8AAAABB7PLDQ",
+          "author": {
+            "login": "majorgilles"
+          },
+          "authorAssociation": "OWNER",
+          "body": "Completed ch04 buffers and indices.",
+          "createdAt": "2026-05-11T19:29:04Z",
+          "includesCreatedEdit": false,
+          "isMinimized": false,
+          "minimizedReason": "",
+          "reactionGroups": [],
+          "url": "https://github.com/majorgilles/rust_game_engine/issues/4#issuecomment-4424190733",
+          "viewerDidAuthor": true
+        }
+      ],
+      "createdAt": "2026-05-09T15:48:55Z",
+      "labels": [],
+      "milestone": null,
+      "number": 4,
+      "state": "CLOSED",
+      "stateReason": "COMPLETED",
+      "title": "ch04: Buffers and Indices",
+      "updatedAt": "2026-05-16T21:47:53Z",
+      "url": "https://github.com/majorgilles/rust_game_engine/issues/4"
+    },
+    {
+      "assignees": [],
+      "author": {
+        "id": "MDQ6VXNlcjUwMDgyMDA=",
+        "is_bot": false,
+        "login": "majorgilles",
+        "name": "Gilles Major"
+      },
+      "body": "## Goal, in plain English\n\nPut an image on a rectangle.\n\nThis teaches textures: images that the GPU can read while drawing.\n\nTutorial: https://sotrh.github.io/learn-wgpu/beginner/tutorial5-textures/\n\n## Important project rule\n\nBuild this in the main shared code path, not as a totally separate throwaway program. Use shared `src/` code where it makes sense.\n\n## What you are learning\n\n- Texture = an image stored on the GPU.\n- Sampler = tells the GPU how to read a texture, especially when it is scaled.\n- Bind group = the package of GPU resources a shader can use.\n- Fragment shader = decides the color of each pixel.\n- Texel = one pixel inside a texture image.\n- Uniform = a small value sent from CPU code to shader code.\n- `vec4<f32>` = four floating-point numbers. For colors this usually means red, green, blue, alpha.\n\n## What to build\n\n1. Follow Learn Wgpu chapter 5.\n2. Load an image file.\n3. Create a GPU texture from it.\n4. Create a sampler.\n5. Create a bind group so the shader can access the texture.\n6. Draw a textured quad. A quad is just a rectangle made from two triangles.\n\n## Extra beginner-friendly variation\n\nUse your own image instead of the tutorial image.\n\nAlso add a `tint: vec4<f32>` uniform and multiply the sampled texture color by it in the fragment shader.\n\nIn plain English: draw the image, but push its colors toward another color, like warm orange.\n\n## Done when\n\n- [ ] `cargo run` shows a textured quad\n- [ ] The texture is your own image, not the tutorial image\n- [ ] The tint visibly changes the image colors\n- [ ] There are no bind group layout mismatch validation errors\n\n## Depends on\n\nFinish #4 first.\n\n## Time estimate\n\nLocal estimate: **6–10 hours** of focused work.\n\nAssumes basic Rust knowledge, no prior graphics experience, and the type-along + small-variation working pattern. This is a local estimate for this issue only; see `README.md` for the global cursus estimate.\n",
+      "closedAt": "2026-05-13T19:43:09Z",
+      "comments": [
+        {
+          "id": "IC_kwDOSY0Wwc8AAAABBwfVaA",
+          "author": {
+            "login": "majorgilles"
+          },
+          "authorAssociation": "OWNER",
+          "body": "**Estimated effort:** 6-10 hours",
+          "createdAt": "2026-05-09T15:52:48Z",
+          "includesCreatedEdit": false,
+          "isMinimized": false,
+          "minimizedReason": "",
+          "reactionGroups": [],
+          "url": "https://github.com/majorgilles/rust_game_engine/issues/5#issuecomment-4412921192",
+          "viewerDidAuthor": true
+        },
+        {
+          "id": "IC_kwDOSY0Wwc8AAAABCOvkMw",
+          "author": {
+            "login": "majorgilles"
+          },
+          "authorAssociation": "OWNER",
+          "body": "Completed ch05: textures, bind groups, texture sampling, and a MirrorRepeat UV/sampler variation.",
+          "createdAt": "2026-05-13T19:43:09Z",
+          "includesCreatedEdit": false,
+          "isMinimized": false,
+          "minimizedReason": "",
+          "reactionGroups": [],
+          "url": "https://github.com/majorgilles/rust_game_engine/issues/5#issuecomment-4444644403",
+          "viewerDidAuthor": true
+        }
+      ],
+      "createdAt": "2026-05-09T15:49:03Z",
+      "labels": [],
+      "milestone": null,
+      "number": 5,
+      "state": "CLOSED",
+      "stateReason": "COMPLETED",
+      "title": "ch05: Textures and bind groups",
+      "updatedAt": "2026-05-16T21:47:54Z",
+      "url": "https://github.com/majorgilles/rust_game_engine/issues/5"
+    },
+    {
+      "assignees": [],
+      "author": {
+        "id": "MDQ6VXNlcjUwMDgyMDA=",
+        "is_bot": false,
+        "login": "majorgilles",
+        "name": "Gilles Major"
+      },
+      "body": "## Goal, in plain English\n\nAdd a 3D camera so you can move around a scene.\n\nTutorial: https://sotrh.github.io/learn-wgpu/beginner/tutorial6-uniforms/\n\n## Important project rule\n\nBuild this in the main app using shared `src/` code. Do not make a totally separate implementation.\n\nThis is also the first chapter where the code may start feeling repetitive. If shared helper code makes the project easier to understand, extract it. Do not extract just because a file is big.\n\n## What you are learning\n\n- Camera = the virtual eye looking at the scene.\n- View matrix = where the camera is and where it points.\n- Projection matrix = how 3D space gets squashed onto the 2D screen.\n- View-projection matrix = view and projection combined.\n- Uniform buffer = GPU memory for small shared values, like the camera matrix.\n- Bind group = lets the shader read that uniform buffer.\n- WASD controls = keyboard movement, like many PC games.\n- Active camera = the camera currently being used to render.\n\n## What to build\n\n1. Follow Learn Wgpu chapter 6.\n2. Build a `Camera` with view and projection matrices.\n3. Send the camera view-projection matrix to the GPU through a uniform buffer.\n4. Bind that uniform buffer during the render pass.\n5. Add WASD camera movement.\n\n## Extra beginner-friendly variation\n\nAdd a second camera.\n\n- Camera 1 starts in one position.\n- Camera 2 starts somewhere else.\n- Press a key, for example `C`, to switch which camera is active.\n- Each camera remembers its own position when you switch away from it.\n\n## Done when\n\n- [ ] `cargo run` shows the textured quad in 3D space\n- [ ] WASD moves the active camera\n- [ ] Pressing the toggle key switches between the two cameras\n- [ ] Each camera keeps its own position/orientation when inactive\n- [ ] The camera view-projection matrix is sent through a uniform buffer and bind group\n- [ ] The bind group is bound during the render pass\n- [ ] The camera matrix is not sent as vertex attributes or push constants\n\n## Depends on\n\nFinish #5 first.\n\n## Time estimate\n\nLocal estimate: **8–12 hours** of focused work.\n\nAssumes basic Rust knowledge, no prior graphics experience, and the type-along + small-variation working pattern. This is a local estimate for this issue only; see `README.md` for the global cursus estimate.\n",
+      "closedAt": null,
+      "comments": [
+        {
+          "id": "IC_kwDOSY0Wwc8AAAABBwfVlA",
+          "author": {
+            "login": "majorgilles"
+          },
+          "authorAssociation": "OWNER",
+          "body": "**Estimated effort:** 8-12 hours",
+          "createdAt": "2026-05-09T15:52:49Z",
+          "includesCreatedEdit": false,
+          "isMinimized": false,
+          "minimizedReason": "",
+          "reactionGroups": [],
+          "url": "https://github.com/majorgilles/rust_game_engine/issues/6#issuecomment-4412921236",
+          "viewerDidAuthor": true
+        }
+      ],
+      "createdAt": "2026-05-09T15:49:12Z",
+      "labels": [],
+      "milestone": null,
+      "number": 6,
+      "state": "OPEN",
+      "stateReason": "",
+      "title": "ch06: Uniform buffers and a 3D camera",
+      "updatedAt": "2026-05-16T21:47:55Z",
+      "url": "https://github.com/majorgilles/rust_game_engine/issues/6"
+    },
+    {
+      "assignees": [],
+      "author": {
+        "id": "MDQ6VXNlcjUwMDgyMDA=",
+        "is_bot": false,
+        "login": "majorgilles",
+        "name": "Gilles Major"
+      },
+      "body": "## Goal, in plain English\n\nDraw many copies of the same mesh efficiently.\n\nInstead of telling the GPU \"draw this shape\" 100 separate times, you tell it once: \"draw this shape 100 times, but put each copy in a different place.\"\n\nTutorial: https://sotrh.github.io/learn-wgpu/beginner/tutorial7-instancing/\n\n## Important project rule\n\nBuild this in the main app using shared `src/` code. Do not make a totally separate implementation.\n\nIf you have now copied the same camera/window setup 3 or more times, consider moving shared code into `lib.rs` or helper modules. Only do this if it makes the code easier to understand.\n\n## What you are learning\n\n- Instance = one copy of a mesh.\n- Instanced rendering = drawing many copies with one draw call.\n- Draw call = one command telling the GPU to draw.\n- Transform = position, rotation, and scale for an object.\n- Per-instance data = data that is different for each copy.\n- `VertexStepMode::Instance` = tells `wgpu`: \"advance this buffer once per instance, not once per vertex.\"\n- Rule of three = if you copy similar code 3 times, it may be time to extract a helper.\n\n## What to build\n\n1. Follow Learn Wgpu chapter 7.\n2. Use instanced rendering.\n3. Draw about 100 copies of one mesh.\n4. Put each copy in an outward spiral, like a snail shell.\n5. Rotate each copy so it faces along the spiral path.\n\n## Done when\n\n- [ ] `cargo run` shows about 100 instances in a spiral\n- [ ] The code uses one draw call for the instances, for example one `draw_indexed`\n- [ ] Instances visually follow the spiral direction\n- [ ] Per-instance data is in a separate buffer using `VertexStepMode::Instance`\n- [ ] Per-instance data is not duplicated into the vertex buffer\n- [ ] Per-instance data is not pushed as uniforms one object at a time\n- [ ] If you started `lib.rs`, write an `IDEAS.md` note explaining why\n\n## Depends on\n\nFinish #6 first.\n\n## Time estimate\n\nLocal estimate: **5–8 hours** of focused work.\n\nAssumes basic Rust knowledge, no prior graphics experience, and the type-along + small-variation working pattern. This is a local estimate for this issue only; see `README.md` for the global cursus estimate.\n",
+      "closedAt": null,
+      "comments": [
+        {
+          "id": "IC_kwDOSY0Wwc8AAAABBwfVug",
+          "author": {
+            "login": "majorgilles"
+          },
+          "authorAssociation": "OWNER",
+          "body": "**Estimated effort:** 5-8 hours",
+          "createdAt": "2026-05-09T15:52:50Z",
+          "includesCreatedEdit": false,
+          "isMinimized": false,
+          "minimizedReason": "",
+          "reactionGroups": [],
+          "url": "https://github.com/majorgilles/rust_game_engine/issues/7#issuecomment-4412921274",
+          "viewerDidAuthor": true
+        }
+      ],
+      "createdAt": "2026-05-09T15:49:22Z",
+      "labels": [],
+      "milestone": null,
+      "number": 7,
+      "state": "OPEN",
+      "stateReason": "",
+      "title": "ch07: Instancing",
+      "updatedAt": "2026-05-16T21:47:57Z",
+      "url": "https://github.com/majorgilles/rust_game_engine/issues/7"
+    },
+    {
+      "assignees": [],
+      "author": {
+        "id": "MDQ6VXNlcjUwMDgyMDA=",
+        "is_bot": false,
+        "login": "majorgilles",
+        "name": "Gilles Major"
+      },
+      "body": "## Goal, in plain English\n\nMake closer objects correctly appear in front of farther objects.\n\nWithout a depth buffer, the GPU can draw things in the wrong order. A far object might appear on top of a near object. The depth buffer fixes that.\n\nTutorial: https://sotrh.github.io/learn-wgpu/beginner/tutorial8-depth/\n\n## Important project rule\n\nBuild this in the main app using shared `src/` code. Do not make a totally separate implementation.\n\n## What you are learning\n\n- Depth = how far a pixel is from the camera.\n- Depth buffer = a hidden image that stores depth values.\n- Depth texture = the GPU texture used for the depth buffer.\n- Depth-stencil state = pipeline settings that turn depth testing on.\n- Occlude = hide behind something closer.\n- Grayscale = black/white image. Here it helps you see the depth buffer.\n\n## What to build\n\n1. Follow Learn Wgpu chapter 8.\n2. Create a depth texture.\n3. Add depth-stencil state to the render pipeline.\n4. Use the depth texture while rendering.\n5. Recreate the depth texture whenever the window is resized.\n\n## Extra beginner-friendly variation\n\nAdd a key toggle, for example `D`.\n\nWhile the key is held, show the depth buffer on the screen as grayscale instead of the normal colors.\n\nPick one rule and stay consistent:\n\n- closer = brighter, farther = darker\n- or closer = darker, farther = brighter\n\n## Done when\n\n- [ ] `cargo run` shows overlapping 3D geometry in the correct front/back order\n- [ ] Holding the toggle key shows the depth buffer as grayscale\n- [ ] The depth view clearly shows depth changes, not a flat white/black screen\n- [ ] The depth texture is recreated on window resize\n\n## Depends on\n\nFinish #7 first.\n\n## Time estimate\n\nLocal estimate: **4–7 hours** of focused work.\n\nAssumes basic Rust knowledge, no prior graphics experience, and the type-along + small-variation working pattern. This is a local estimate for this issue only; see `README.md` for the global cursus estimate.\n",
+      "closedAt": null,
+      "comments": [
+        {
+          "id": "IC_kwDOSY0Wwc8AAAABBwfV2g",
+          "author": {
+            "login": "majorgilles"
+          },
+          "authorAssociation": "OWNER",
+          "body": "**Estimated effort:** 4-7 hours",
+          "createdAt": "2026-05-09T15:52:51Z",
+          "includesCreatedEdit": false,
+          "isMinimized": false,
+          "minimizedReason": "",
+          "reactionGroups": [],
+          "url": "https://github.com/majorgilles/rust_game_engine/issues/8#issuecomment-4412921306",
+          "viewerDidAuthor": true
+        }
+      ],
+      "createdAt": "2026-05-09T15:49:30Z",
+      "labels": [],
+      "milestone": null,
+      "number": 8,
+      "state": "OPEN",
+      "stateReason": "",
+      "title": "ch08: The Depth Buffer",
+      "updatedAt": "2026-05-16T21:47:58Z",
+      "url": "https://github.com/majorgilles/rust_game_engine/issues/8"
+    },
+    {
+      "assignees": [],
+      "author": {
+        "id": "MDQ6VXNlcjUwMDgyMDA=",
+        "is_bot": false,
+        "login": "majorgilles",
+        "name": "Gilles Major"
+      },
+      "body": "## Goal, in plain English\n\nLoad real 3D model files and draw them.\n\nTutorial: https://sotrh.github.io/learn-wgpu/beginner/tutorial9-models/\n\n## Important project rule\n\nBuild this in the main app using shared `src/` code. Do not make a totally separate implementation.\n\n## What you are learning\n\n- `.obj` = a common 3D model file format.\n- `tobj` = a Rust crate that loads `.obj` files.\n- Mesh = the shape data for a model.\n- Material = settings for how the model should look, often including textures.\n- Texture = image data used on the model surface.\n- Per-mesh draw = drawing each mesh piece with the right material.\n- DCC tool = a 3D art program, like Blender.\n- `.gitignore` = tells Git not to track certain files.\n\n## What to build\n\n1. Follow Learn Wgpu chapter 9.\n2. Load `.obj` models using `tobj`.\n3. Load their materials and textures.\n4. Draw the meshes with the right materials.\n5. Make the camera controls good enough to inspect the models.\n\n## Extra beginner-friendly variation\n\nLoad two different `.obj` models side by side.\n\n- One can be the tutorial cube.\n- The other can be a free model from the internet or a simple model you make in Blender.\n- Put them apart on the x-axis so you can clearly see both.\n\nIf a model file is large, do not commit it. Add it to `.gitignore` and leave a code comment or README note explaining where to get it.\n\n## Done when\n\n- [ ] `cargo run` shows two different models at the same time\n- [ ] Each model uses its own material/texture\n- [ ] Camera controls let you fly around and inspect both models\n- [ ] Large `.obj` files are not committed\n- [ ] Large model files are documented so you can download/find them again\n\n## Depends on\n\nFinish #8 first.\n\n## Time estimate\n\nLocal estimate: **6–10 hours** of focused work.\n\nAssumes basic Rust knowledge, no prior graphics experience, and the type-along + small-variation working pattern. This is a local estimate for this issue only; see `README.md` for the global cursus estimate.\n",
+      "closedAt": null,
+      "comments": [
+        {
+          "id": "IC_kwDOSY0Wwc8AAAABBwfV-Q",
+          "author": {
+            "login": "majorgilles"
+          },
+          "authorAssociation": "OWNER",
+          "body": "**Estimated effort:** 6-10 hours",
+          "createdAt": "2026-05-09T15:52:52Z",
+          "includesCreatedEdit": false,
+          "isMinimized": false,
+          "minimizedReason": "",
+          "reactionGroups": [],
+          "url": "https://github.com/majorgilles/rust_game_engine/issues/9#issuecomment-4412921337",
+          "viewerDidAuthor": true
+        }
+      ],
+      "createdAt": "2026-05-09T15:49:39Z",
+      "labels": [],
+      "milestone": null,
+      "number": 9,
+      "state": "OPEN",
+      "stateReason": "",
+      "title": "ch09: Model Loading",
+      "updatedAt": "2026-05-16T21:47:59Z",
+      "url": "https://github.com/majorgilles/rust_game_engine/issues/9"
+    },
+    {
+      "assignees": [],
+      "author": {
+        "id": "MDQ6VXNlcjUwMDgyMDA=",
+        "is_bot": false,
+        "login": "majorgilles",
+        "name": "Gilles Major"
+      },
+      "body": "## Goal, in plain English\n\nAdd lighting so 3D objects look shaded instead of flat.\n\nTutorial: https://sotrh.github.io/learn-wgpu/intermediate/tutorial10-lighting/\n\n## Important project rule\n\nBuild this in the main app using shared `src/` code. Do not make a totally separate implementation.\n\n## What you are learning\n\n- Light source = something that brightens the scene.\n- Point light = light that shines from one position in all directions.\n- Directional light = light from one direction, like sunlight.\n- Fragment shader = decides each pixel's color.\n- Blinn-Phong = a classic lighting formula.\n- Ambient = base light so shadows are not pure black.\n- Diffuse = matte light based on surface direction.\n- Specular = shiny highlight.\n- Render pipeline = GPU recipe for drawing one kind of thing.\n- Delta time = seconds since last frame. Use this so motion speed does not depend on FPS.\n- Judder = ugly uneven motion.\n\n## What to build\n\n1. Follow Learn Wgpu chapter 10.\n2. Add a light.\n3. Write lighting math in the fragment shader.\n4. Render a small visible marker for the light, like a tiny cube or sphere.\n5. Use a separate render pipeline for the light marker.\n\n## Extra beginner-friendly variation\n\nAnimate the light so it slowly orbits around the center of the scene in a flat horizontal circle.\n\nUse delta time so the orbit speed is smooth on fast and slow computers.\n\n## Done when\n\n- [ ] `cargo run` shows lit models with visible shading\n- [ ] The light source is visible as a small marker\n- [ ] The light orbits smoothly without judder\n- [ ] Motion uses delta time, not frame count\n- [ ] Lighting includes ambient, diffuse, and specular parts\n- [ ] The light marker uses a separate render pipeline with its own shaders\n- [ ] The light marker is not forced into the main lit-object pipeline\n\n## Depends on\n\nFinish #9 first.\n\n## Time estimate\n\nLocal estimate: **6–10 hours** of focused work.\n\nAssumes basic Rust knowledge, no prior graphics experience, and the type-along + small-variation working pattern. This is a local estimate for this issue only; see `README.md` for the global cursus estimate.\n",
+      "closedAt": null,
+      "comments": [
+        {
+          "id": "IC_kwDOSY0Wwc8AAAABBwfWGg",
+          "author": {
+            "login": "majorgilles"
+          },
+          "authorAssociation": "OWNER",
+          "body": "**Estimated effort:** 6-10 hours",
+          "createdAt": "2026-05-09T15:52:53Z",
+          "includesCreatedEdit": false,
+          "isMinimized": false,
+          "minimizedReason": "",
+          "reactionGroups": [],
+          "url": "https://github.com/majorgilles/rust_game_engine/issues/10#issuecomment-4412921370",
+          "viewerDidAuthor": true
+        }
+      ],
+      "createdAt": "2026-05-09T15:49:48Z",
+      "labels": [],
+      "milestone": null,
+      "number": 10,
+      "state": "OPEN",
+      "stateReason": "",
+      "title": "ch10: Working with Lights",
+      "updatedAt": "2026-05-16T21:48:00Z",
+      "url": "https://github.com/majorgilles/rust_game_engine/issues/10"
+    },
+    {
+      "assignees": [],
+      "author": {
+        "id": "MDQ6VXNlcjUwMDgyMDA=",
+        "is_bot": false,
+        "login": "majorgilles",
+        "name": "Gilles Major"
+      },
+      "body": "## Goal, in plain English\n\nMake model surfaces look like they have tiny bumps and details, even when the mesh is still simple.\n\nThis is called normal mapping.\n\nTutorial: https://sotrh.github.io/learn-wgpu/intermediate/tutorial11-normals/\n\n## Important project rule\n\nBuild this in the main app using shared `src/` code. Do not make a totally separate implementation.\n\n## What you are learning\n\n- Normal = a direction pointing away from a surface. Lighting uses it.\n- Normal map = a texture that stores fake surface directions.\n- Tangent space = a local coordinate system on the surface of the model.\n- Per-fragment = done for each pixel.\n- Flat-normal lighting = lighting that does not use a normal map.\n- Uniform = small value sent to the shader.\n- Specialization/toggle value = a cheap way to tell the shader which mode to use.\n- Swapping pipelines = changing the whole GPU recipe. It works, but is heavier than a simple uniform toggle.\n\n## What to build\n\n1. Follow Learn Wgpu chapter 11.\n2. Load normal-map textures.\n3. Use tangent-space normal mapping in the fragment shader.\n4. Make the model show richer surface detail.\n\n## Extra beginner-friendly variation\n\nAdd a key toggle, for example `N`.\n\n- Normal mapping on = bumpy/detail look.\n- Normal mapping off = flatter look.\n\nThis lets you compare the same model both ways and actually see what normal mapping does.\n\n## Done when\n\n- [ ] `cargo run` shows a model with normal mapping enabled by default\n- [ ] Pressing the toggle key switches normal mapping on/off\n- [ ] The difference is obvious: surface bumps/details appear and disappear\n- [ ] The toggle uses a uniform or similar cheap shader value\n- [ ] The toggle does not swap whole render pipelines\n\n## Depends on\n\nFinish #10 first.\n\n## Time estimate\n\nLocal estimate: **5–8 hours** of focused work.\n\nAssumes basic Rust knowledge, no prior graphics experience, and the type-along + small-variation working pattern. This is a local estimate for this issue only; see `README.md` for the global cursus estimate.\n",
+      "closedAt": null,
+      "comments": [
+        {
+          "id": "IC_kwDOSY0Wwc8AAAABBwfWRQ",
+          "author": {
+            "login": "majorgilles"
+          },
+          "authorAssociation": "OWNER",
+          "body": "**Estimated effort:** 5-8 hours",
+          "createdAt": "2026-05-09T15:52:55Z",
+          "includesCreatedEdit": false,
+          "isMinimized": false,
+          "minimizedReason": "",
+          "reactionGroups": [],
+          "url": "https://github.com/majorgilles/rust_game_engine/issues/11#issuecomment-4412921413",
+          "viewerDidAuthor": true
+        }
+      ],
+      "createdAt": "2026-05-09T15:49:57Z",
+      "labels": [],
+      "milestone": null,
+      "number": 11,
+      "state": "OPEN",
+      "stateReason": "",
+      "title": "ch11: Normal Mapping",
+      "updatedAt": "2026-05-16T21:48:01Z",
+      "url": "https://github.com/majorgilles/rust_game_engine/issues/11"
+    },
+    {
+      "assignees": [],
+      "author": {
+        "id": "MDQ6VXNlcjUwMDgyMDA=",
+        "is_bot": false,
+        "login": "majorgilles",
+        "name": "Gilles Major"
+      },
+      "body": "## Goal, in plain English\n\nMake the camera controls feel like a real 3D camera.\n\nTutorial: https://sotrh.github.io/learn-wgpu/intermediate/tutorial12-camera/\n\n## Important project rule\n\nBuild this in the main app using shared `src/` code. Do not make a totally separate implementation.\n\n## What you are learning\n\n- `CameraController` = code that owns camera input and movement rules.\n- Mouse-look = moving the mouse rotates the camera view.\n- View matrix = camera position/direction.\n- Projection matrix = 3D-to-screen settings.\n- Decoupled = split into separate pieces instead of one blob.\n- Raw mouse deltas = how far the mouse moved since the last event.\n- OS pointer acceleration = the operating system changing mouse movement speed. Raw deltas avoid this.\n- Delta-time scaled = movement uses seconds, not frames, so speed is stable.\n\n## What to build\n\n1. Follow Learn Wgpu chapter 12.\n2. Refactor camera input/state into a `CameraController`.\n3. Add smooth WASD movement.\n4. Add mouse-look.\n5. Keep view and projection logic cleanly separated.\n6. Use raw mouse movement from `DeviceEvent::MouseMotion`.\n7. Make movement speed use delta time.\n\n## Extra beginner-friendly variation\n\nAdd a freeze camera key, for example `F`.\n\n- Press `F`: camera stops responding to input.\n- Press `F` again: camera starts responding again.\n- Rendering continues while frozen.\n\nThis is useful when you want to inspect the scene without accidentally moving.\n\n## Done when\n\n- [ ] `cargo run` has smooth WASD movement and mouse-look\n- [ ] Pressing the freeze key stops camera input\n- [ ] Pressing the freeze key again resumes camera input\n- [ ] Rendering continues at full speed while the camera is frozen\n- [ ] There is a visible frozen indicator, such as window title text, on-screen text, or a console print\n- [ ] Mouse-look uses `DeviceEvent::MouseMotion`, not cursor position from `WindowEvent`\n- [ ] Movement is in units/second using delta time, not units/frame\n\n## Depends on\n\nFinish #11 first.\n\n## Time estimate\n\nLocal estimate: **5–8 hours** of focused work.\n\nAssumes basic Rust knowledge, no prior graphics experience, and the type-along + small-variation working pattern. This is a local estimate for this issue only; see `README.md` for the global cursus estimate.\n",
+      "closedAt": null,
+      "comments": [
+        {
+          "id": "IC_kwDOSY0Wwc8AAAABBwfWdQ",
+          "author": {
+            "login": "majorgilles"
+          },
+          "authorAssociation": "OWNER",
+          "body": "**Estimated effort:** 5-8 hours",
+          "createdAt": "2026-05-09T15:52:56Z",
+          "includesCreatedEdit": false,
+          "isMinimized": false,
+          "minimizedReason": "",
+          "reactionGroups": [],
+          "url": "https://github.com/majorgilles/rust_game_engine/issues/12#issuecomment-4412921461",
+          "viewerDidAuthor": true
+        }
+      ],
+      "createdAt": "2026-05-09T15:50:06Z",
+      "labels": [],
+      "milestone": null,
+      "number": 12,
+      "state": "OPEN",
+      "stateReason": "",
+      "title": "ch12: A Better Camera",
+      "updatedAt": "2026-05-16T21:48:02Z",
+      "url": "https://github.com/majorgilles/rust_game_engine/issues/12"
+    },
+    {
+      "assignees": [],
+      "author": {
+        "id": "MDQ6VXNlcjUwMDgyMDA=",
+        "is_bot": false,
+        "login": "majorgilles",
+        "name": "Gilles Major"
+      },
+      "body": "## Goal, in plain English\n\nRender the scene in HDR, then convert it back to normal screen colors.\n\nHDR lets the renderer store very bright values without immediately crushing them. Tone mapping turns those values into colors your monitor can show.\n\nTutorial: https://sotrh.github.io/learn-wgpu/intermediate/tutorial13-hdr/\n\nThis is the final Phase 1 chapter.\n\n## Important project rule\n\nBuild this in the main app using shared `src/` code. Do not make a totally separate implementation.\n\n## What you are learning\n\n- HDR = High Dynamic Range. It can store a wider range of brightness.\n- Float texture = texture that stores floating-point color values, useful for HDR.\n- Tone mapping = converting HDR colors into normal display colors.\n- Swap chain = the final images shown in the window.\n- Fullscreen pass = drawing one full-screen triangle/quad to process the final image.\n- Gamma correction = adjusts colors so brightness looks right on the screen.\n- Exposure = brightness control, like camera exposure.\n- Uniform = small value sent to the shader.\n\n## What to build\n\n1. Follow Learn Wgpu chapter 13.\n2. Render the scene into an HDR float texture.\n3. Add a second fullscreen pass.\n4. In that pass, tone-map the HDR texture into the final swap-chain image.\n5. Apply gamma correction.\n\n## Extra beginner-friendly variation\n\nAdd runtime exposure controls.\n\nFor example:\n\n- `+` increases exposure\n- `-` decreases exposure\n\nShow the current exposure value in the window title.\n\nThe point is to see how HDR and tone mapping respond when the scene gets brighter or darker.\n\n## Done when\n\n- [ ] `cargo run` renders through an HDR pass\n- [ ] The HDR result is tone-mapped to the swap chain\n- [ ] Exposure keys visibly change scene brightness\n- [ ] Changing exposure does not break colors\n- [ ] The current exposure value is displayed, window title is fine\n- [ ] Write at least one `IDEAS.md` note about Phase 1: what surprised you, and what you would reuse for Pong\n\n## Depends on\n\nFinish #12 first.\n\n## Time estimate\n\nLocal estimate: **6–10 hours** of focused work.\n\nAssumes basic Rust knowledge, no prior graphics experience, and the type-along + small-variation working pattern. This is a local estimate for this issue only; see `README.md` for the global cursus estimate.\n",
+      "closedAt": null,
+      "comments": [
+        {
+          "id": "IC_kwDOSY0Wwc8AAAABBwfWmg",
+          "author": {
+            "login": "majorgilles"
+          },
+          "authorAssociation": "OWNER",
+          "body": "**Estimated effort:** 6-10 hours",
+          "createdAt": "2026-05-09T15:52:57Z",
+          "includesCreatedEdit": false,
+          "isMinimized": false,
+          "minimizedReason": "",
+          "reactionGroups": [],
+          "url": "https://github.com/majorgilles/rust_game_engine/issues/13#issuecomment-4412921498",
+          "viewerDidAuthor": true
+        }
+      ],
+      "createdAt": "2026-05-09T15:50:15Z",
+      "labels": [],
+      "milestone": null,
+      "number": 13,
+      "state": "OPEN",
+      "stateReason": "",
+      "title": "ch13: HDR Rendering",
+      "updatedAt": "2026-05-16T21:48:03Z",
+      "url": "https://github.com/majorgilles/rust_game_engine/issues/13"
+    },
+    {
+      "assignees": [],
+      "author": {
+        "id": "MDQ6VXNlcjUwMDgyMDA=",
+        "is_bot": false,
+        "login": "majorgilles",
+        "name": "Gilles Major"
+      },
+      "body": "## Goal, in plain English\n\nBuild a complete 2D Pong game from the Learn Wgpu showcase tutorial.\n\nThis is the first full game in the project: paddles, ball, scoring, winning, and a reset loop.\n\nTutorial: https://sotrh.github.io/learn-wgpu/showcase/pong/\n\n## Important project rule\n\nBuild this in the main app using shared `src/` code. Do not make a totally separate implementation.\n\nThis chapter may be big enough to need several shared modules in `src/`. Decide on purpose. Keep the code easy to follow.\n\n## Why this matters\n\nThis tutorial is the main Learn Wgpu example where rendering, input, game state, and the game loop all work together.\n\nYou will use it as a working reference before building 3D Pong in Phase 2b.\n\n## What you are learning\n\n- Renderer = code that draws the game.\n- Input = keyboard/player controls.\n- Game state = data like ball position, paddle position, score, and current mode.\n- Game loop = update the game, then draw it, over and over.\n- State machine = clear game modes, such as `Serving`, `Playing`, and `GameOver`.\n- `wgpu_glyph` or similar = a crate that can draw text on the screen.\n- AI paddle = computer-controlled paddle.\n- `WIN_SCORE` = constant for how many points are needed to win.\n\n## What to build\n\n1. Follow the 2D Pong showcase tutorial.\n2. Build paddles, ball, scoring, and win condition.\n3. Render the score as on-screen text.\n4. Use a simple state machine with at least:\n   - `Serving`\n   - `Playing`\n   - `GameOver`\n5. Reset the game after someone wins.\n\n## Extra beginner-friendly variations\n\n1. Make AI difficulty configurable.\n   - Put a constant near the top of the file/module.\n   - It can control AI tracking lag or max speed.\n2. Add `WIN_SCORE`.\n   - First player to `WIN_SCORE` wins.\n   - Show `Player wins!` or `AI wins!`.\n   - Reset on key press.\n\n## Done when\n\n- [ ] `cargo run` plays a full game of 2D Pong\n- [ ] AI difficulty is tunable through a constant\n- [ ] Score is rendered on-screen as text, not only printed to stdout\n- [ ] The game uses an explicit state machine with at least `Serving`, `Playing`, and `GameOver`\n- [ ] Win condition shows a clear win state\n- [ ] The game resets after a win\n- [ ] Write at least one `IDEAS.md` note about what tutorial architecture you would keep or change for 3D Pong\n\n## Depends on\n\nFinish #13 first.\n\n## Time estimate\n\nLocal estimate: **10–18 hours** of focused work.\n\nAssumes basic Rust knowledge, no prior graphics experience, and the type-along + small-variation working pattern. This is a local estimate for this issue only; see `README.md` for the global cursus estimate.\n",
+      "closedAt": null,
+      "comments": [
+        {
+          "id": "IC_kwDOSY0Wwc8AAAABBwfWuQ",
+          "author": {
+            "login": "majorgilles"
+          },
+          "authorAssociation": "OWNER",
+          "body": "**Estimated effort:** 10-18 hours",
+          "createdAt": "2026-05-09T15:52:58Z",
+          "includesCreatedEdit": false,
+          "isMinimized": false,
+          "minimizedReason": "",
+          "reactionGroups": [],
+          "url": "https://github.com/majorgilles/rust_game_engine/issues/14#issuecomment-4412921529",
+          "viewerDidAuthor": true
+        }
+      ],
+      "createdAt": "2026-05-09T15:50:30Z",
+      "labels": [],
+      "milestone": null,
+      "number": 14,
+      "state": "OPEN",
+      "stateReason": "",
+      "title": "Phase 2a: 2D Pong (Showcase tutorial)",
+      "updatedAt": "2026-05-16T21:48:04Z",
+      "url": "https://github.com/majorgilles/rust_game_engine/issues/14"
+    },
+    {
+      "assignees": [],
+      "author": {
+        "id": "MDQ6VXNlcjUwMDgyMDA=",
+        "is_bot": false,
+        "login": "majorgilles",
+        "name": "Gilles Major"
+      },
+      "body": "## Goal, in plain English\n\nBuild the empty 3D Pong scene.\n\nNo ball yet. No scoring yet. No real gameplay yet. Just make the court, paddles, and camera visible.\n\n## Important project rule\n\nBuild this in the main app using shared `src/` code. Do not make a totally separate implementation.\n\nReuse helpers from Phase 1 if they make the code easier to understand.\n\n## What you are learning\n\n- Static scene = things are visible but not moving yet.\n- Scaffolding = basic structure you build on later.\n- Court = the 3D Pong play area.\n- Prism = a stretched 3D box shape.\n- z-axis = the depth direction, going away from/toward the camera.\n- z-extreme = one far end of the court.\n- Cross-section = the 2D slice of the court width/height.\n- Camera angle = where the camera sits and points.\n- FOV = field of view; how wide the camera sees.\n- Mega-mesh = one giant mesh containing everything. Avoid this here; keep court, paddles, and camera as separate ideas.\n\n## What to build\n\n1. Make a rectangular tunnel-style court.\n2. The court has 4 walls:\n   - top\n   - bottom\n   - left\n   - right\n3. The court runs along the z-axis.\n4. Add two paddles:\n   - one at the near end\n   - one at the far end\n5. Make paddles smaller than the court opening.\n6. Add a 3D camera that can see the court clearly.\n7. Use solid colors only. No textures or fancy lighting needed yet.\n\n## Human eyeball check\n\nThis issue needs taste, not just math.\n\nPlay with:\n\n- court proportions\n- camera angle\n- FOV\n- paddle size\n\nStop when it reads as \"this is a Pong court.\"\n\nTake a screenshot when you are happy and attach it when closing the issue.\n\n## Done when\n\n- [ ] `cargo run` shows a static 3D scene with a court and two paddles\n- [ ] You can look at it and understand \"this is a Pong court\"\n- [ ] Paddles, court walls, and camera are separate concepts in code\n- [ ] The scene is not one giant mega-mesh\n- [ ] A screenshot is attached to this issue when closing\n\n## Depends on\n\nFinish #14 first.\n\n## Time estimate\n\nLocal estimate: **6–10 hours** of focused work.\n\nAssumes basic Rust knowledge, no prior graphics experience, and the type-along + small-variation working pattern. This is a local estimate for this issue only; see `README.md` for the global cursus estimate.\n",
+      "closedAt": null,
+      "comments": [
+        {
+          "id": "IC_kwDOSY0Wwc8AAAABBwfW5w",
+          "author": {
+            "login": "majorgilles"
+          },
+          "authorAssociation": "OWNER",
+          "body": "**Estimated effort:** 6-10 hours",
+          "createdAt": "2026-05-09T15:52:59Z",
+          "includesCreatedEdit": false,
+          "isMinimized": false,
+          "minimizedReason": "",
+          "reactionGroups": [],
+          "url": "https://github.com/majorgilles/rust_game_engine/issues/15#issuecomment-4412921575",
+          "viewerDidAuthor": true
+        }
+      ],
+      "createdAt": "2026-05-09T15:50:46Z",
+      "labels": [],
+      "milestone": null,
+      "number": 15,
+      "state": "OPEN",
+      "stateReason": "",
+      "title": "Phase 2b #1: 3D Pong — court + paddles + camera",
+      "updatedAt": "2026-05-16T21:48:06Z",
+      "url": "https://github.com/majorgilles/rust_game_engine/issues/15"
+    },
+    {
+      "assignees": [],
+      "author": {
+        "id": "MDQ6VXNlcjUwMDgyMDA=",
+        "is_bot": false,
+        "login": "majorgilles",
+        "name": "Gilles Major"
+      },
+      "body": "## Goal, in plain English\n\nAdd the Pong ball and make it bounce in 3D.\n\nStill no scoring yet. For now the ball just bounces forever.\n\n## Important project rule\n\nBuild this in the main app using shared `src/` code. Do not make a totally separate implementation.\n\n## What you are learning\n\n- Entity = a thing in the game world, like the ball or a paddle.\n- `vec3` = 3 numbers together: x, y, and z.\n- Position = where something is.\n- Velocity = how fast something moves and in what direction.\n- Constant velocity = speed/direction stay the same until a bounce changes them.\n- Delta time = seconds since the last frame. Use it so motion is smooth at different FPS.\n- Collision = when two things touch or overlap.\n- Reflect = flip a movement direction after a bounce.\n- Bounding box = simple box used to test if things overlap.\n- Rendering = drawing. Collision math should be separate from drawing code.\n\n## What to build\n\n1. Add a ball with:\n   - position as `vec3`\n   - velocity as `vec3`\n2. Move the ball using delta time.\n3. No gravity.\n4. No drag/friction.\n5. Bounce off all 4 court walls.\n6. Bounce off both paddles when the ball hits a paddle bounding box.\n7. Do not add scoring yet.\n8. If the ball reaches the back wall, just bounce it for now. Scoring comes in #17.\n\n## Simple collision idea\n\nWhen the ball hits a side wall, flip the matching velocity part:\n\n- hits left/right wall: flip x velocity\n- hits top/bottom wall: flip y velocity\n- hits paddle: flip z velocity\n\n## Done when\n\n- [ ] `cargo run` shows a ball bouncing inside the court\n- [ ] Ball motion is smooth and frame-rate independent\n- [ ] Ball reflects correctly off all 4 walls\n- [ ] Ball reflects correctly off both paddles\n- [ ] Collision math lives in a function/module separate from rendering\n\n## Depends on\n\nFinish #15 first.\n\n## Time estimate\n\nLocal estimate: **8–14 hours** of focused work.\n\nAssumes basic Rust knowledge, no prior graphics experience, and the type-along + small-variation working pattern. This is a local estimate for this issue only; see `README.md` for the global cursus estimate.\n",
+      "closedAt": null,
+      "comments": [
+        {
+          "id": "IC_kwDOSY0Wwc8AAAABBwfXFA",
+          "author": {
+            "login": "majorgilles"
+          },
+          "authorAssociation": "OWNER",
+          "body": "**Estimated effort:** 8-14 hours",
+          "createdAt": "2026-05-09T15:53:01Z",
+          "includesCreatedEdit": false,
+          "isMinimized": false,
+          "minimizedReason": "",
+          "reactionGroups": [],
+          "url": "https://github.com/majorgilles/rust_game_engine/issues/16#issuecomment-4412921620",
+          "viewerDidAuthor": true
+        }
+      ],
+      "createdAt": "2026-05-09T15:50:56Z",
+      "labels": [],
+      "milestone": null,
+      "number": 16,
+      "state": "OPEN",
+      "stateReason": "",
+      "title": "Phase 2b #2: 3D Pong — ball + 3D collision",
+      "updatedAt": "2026-05-16T21:48:07Z",
+      "url": "https://github.com/majorgilles/rust_game_engine/issues/16"
+    },
+    {
+      "assignees": [],
+      "author": {
+        "id": "MDQ6VXNlcjUwMDgyMDA=",
+        "is_bot": false,
+        "login": "majorgilles",
+        "name": "Gilles Major"
+      },
+      "body": "## Goal, in plain English\n\nTurn 3D Pong into a real playable game.\n\nThe player controls one paddle. The computer controls the other. The game tracks score and can end.\n\n## Important project rule\n\nBuild this in the main app using shared `src/` code. Do not make a totally separate implementation.\n\n## What you are learning\n\n- Player paddle = the paddle controlled by you.\n- AI paddle = the paddle controlled by the computer.\n- AI = simple computer behavior. It does not need to be smart.\n- Clamped = not allowed to move outside the court bounds.\n- Lag = the AI follows slowly instead of instantly.\n- z-plane = a flat slice at one z position, like the paddle's end of the court.\n- Scoring = giving a point when someone misses the ball.\n- Opposing player = the other side.\n- Win condition = rule that decides when the game is over.\n- `WIN_SCORE` = constant for points needed to win.\n- Reset = put the game back at the start.\n\n## What to build\n\n1. Add keyboard controls for the player paddle.\n   - WASD or arrow keys are fine.\n   - Move in x/y.\n   - Clamp movement so the paddle stays inside the court opening.\n2. Add AI for the other paddle.\n   - It follows the ball's x/y position.\n   - Give it capped speed or lag so it is beatable.\n   - No prediction needed.\n3. Add scoring.\n   - If the ball passes a paddle without being hit, the other player scores.\n   - Reset the ball to the center after a score.\n   - Randomize the new ball direction a little.\n4. Add a win condition.\n   - First to `WIN_SCORE` wins.\n   - Show the winner in the window title or console.\n   - Press a key to reset scores and start a new game.\n\n## Done when\n\n- [ ] `cargo run` is a playable 3D Pong game\n- [ ] Player paddle responds to keyboard input\n- [ ] Player paddle stays inside court bounds\n- [ ] AI can score\n- [ ] Player can score\n- [ ] AI is beatable but not useless\n- [ ] Scoring works correctly\n- [ ] Ball reset works correctly after scoring\n- [ ] Win condition shows a visible win state\n- [ ] Pressing a key resets after a win\n- [ ] AI difficulty is tunable through a constant\n\n## Depends on\n\nFinish #16 first.\n\n## Time estimate\n\nLocal estimate: **6–10 hours** of focused work.\n\nAssumes basic Rust knowledge, no prior graphics experience, and the type-along + small-variation working pattern. This is a local estimate for this issue only; see `README.md` for the global cursus estimate.\n",
+      "closedAt": null,
+      "comments": [
+        {
+          "id": "IC_kwDOSY0Wwc8AAAABBwfXOQ",
+          "author": {
+            "login": "majorgilles"
+          },
+          "authorAssociation": "OWNER",
+          "body": "**Estimated effort:** 6-10 hours",
+          "createdAt": "2026-05-09T15:53:02Z",
+          "includesCreatedEdit": false,
+          "isMinimized": false,
+          "minimizedReason": "",
+          "reactionGroups": [],
+          "url": "https://github.com/majorgilles/rust_game_engine/issues/17#issuecomment-4412921657",
+          "viewerDidAuthor": true
+        }
+      ],
+      "createdAt": "2026-05-09T15:51:06Z",
+      "labels": [],
+      "milestone": null,
+      "number": 17,
+      "state": "OPEN",
+      "stateReason": "",
+      "title": "Phase 2b #3: 3D Pong — input + AI + scoring + win",
+      "updatedAt": "2026-05-16T21:48:08Z",
+      "url": "https://github.com/majorgilles/rust_game_engine/issues/17"
+    },
+    {
+      "assignees": [],
+      "author": {
+        "id": "MDQ6VXNlcjUwMDgyMDA=",
+        "is_bot": false,
+        "login": "majorgilles",
+        "name": "Gilles Major"
+      },
+      "body": "## Goal, in plain English\n\nMake it easy to tell how deep into the court the ball is.\n\nIn 3D Pong, players can lose because they cannot judge the ball's z position. This issue adds a visual helper so the ball's depth is obvious.\n\n## Important project rule\n\nBuild this in the main app using shared `src/` code. Do not make a totally separate implementation.\n\n## What you are learning\n\n- Depth perception = your ability to tell how far away something is.\n- z position = how far forward/back the ball is in the court.\n- Visual cue = extra visual help for the player's eyes.\n- Ground-plane shadow = a flat dark circle on the floor under the ball.\n- Grid texture = grid lines on the floor that make distance easier to read.\n- Projected indicator line = a line from the ball straight down to the floor.\n- Perspective foreshortening = far things look smaller/closer together, which helps the brain read depth.\n- Semi-transparent = partly see-through.\n\n## Pick one visual cue\n\nChoose one of these:\n\n### Option A: ground-plane shadow\n\nDraw a flat, semi-transparent dark disc on the court floor directly under the ball. Move it every frame as the ball moves.\n\nThis is the recommended first try because it usually looks clean.\n\n### Option B: grid-textured court floor\n\nPut a regular grid on the floor. The grid lines help the eye understand distance.\n\n### Option C: projected indicator line\n\nDraw a thin line from the ball straight down to the floor.\n\n## Human eyeball check\n\nYou cannot fully know which cue feels best until you try it in motion.\n\nTry Option A first. If it does not feel clear, switch to B or C.\n\nWrite an `IDEAS.md` note explaining:\n\n- what you tried\n- what you picked\n- why it worked best\n\n## Done when\n\n- [ ] `cargo run` includes a clear depth cue\n- [ ] The ball's z position is easy to understand while playing\n- [ ] You can play a full game without losing because you misjudged depth\n- [ ] `IDEAS.md` explains which cue you picked, what you tried, and why\n\n## Depends on\n\nFinish #17 first.\n\n## Time estimate\n\nLocal estimate: **4–8 hours** of focused work.\n\nAssumes basic Rust knowledge, no prior graphics experience, and the type-along + small-variation working pattern. This is a local estimate for this issue only; see `README.md` for the global cursus estimate.\n",
+      "closedAt": null,
+      "comments": [
+        {
+          "id": "IC_kwDOSY0Wwc8AAAABBwfXYg",
+          "author": {
+            "login": "majorgilles"
+          },
+          "authorAssociation": "OWNER",
+          "body": "**Estimated effort:** 4-8 hours",
+          "createdAt": "2026-05-09T15:53:03Z",
+          "includesCreatedEdit": false,
+          "isMinimized": false,
+          "minimizedReason": "",
+          "reactionGroups": [],
+          "url": "https://github.com/majorgilles/rust_game_engine/issues/18#issuecomment-4412921698",
+          "viewerDidAuthor": true
+        }
+      ],
+      "createdAt": "2026-05-09T15:51:19Z",
+      "labels": [],
+      "milestone": null,
+      "number": 18,
+      "state": "OPEN",
+      "stateReason": "",
+      "title": "Phase 2b #4: 3D Pong — depth-perception cue",
+      "updatedAt": "2026-05-16T21:48:09Z",
+      "url": "https://github.com/majorgilles/rust_game_engine/issues/18"
+    },
+    {
+      "assignees": [],
+      "author": {
+        "id": "MDQ6VXNlcjUwMDgyMDA=",
+        "is_bot": false,
+        "login": "majorgilles",
+        "name": "Gilles Major"
+      },
+      "body": "## Goal, in plain English\n\nMake 3D Pong feel better, then write down what you learned.\n\nThis is the final issue of Phase 2 and the v1 milestone.\n\n## Important project rule\n\nBuild this in the main app using shared `src/` code. Do not make a totally separate implementation.\n\n## What you are learning\n\n- Polish = small improvements that make the game feel better.\n- Tuning = adjusting numbers until the game feels right.\n- Ball speed = how fast the ball moves.\n- Paddle responsiveness = how quickly the paddle reacts to input.\n- Camera angle = where the camera sits and points.\n- FOV = field of view; how wide the camera sees.\n- AI difficulty = how hard the computer paddle is to beat.\n- Jank = anything that looks or feels rough.\n- Z-fighting = flickering caused when two surfaces are in almost the same place.\n- Clipping = geometry cutting through other geometry or the camera.\n- Motion stutter = uneven movement.\n- Retrospective = a written note about what went well, what hurt, and what you would do differently.\n- Coupling = when parts of the code depend on each other too much, making changes painful.\n\n## What to tune\n\nPlay the game and adjust these until it feels reasonable:\n\n- ball speed\n- whether the ball speeds up a little after paddle hits\n- paddle movement speed\n- paddle input feel\n- camera angle\n- camera FOV\n- AI speed/lag\n- any visual glitches\n\n## What to write in `IDEAS.md`\n\nWrite at least 200 words about the architecture.\n\nUse simple questions:\n\n- What parts of the code were easy to change?\n- What parts were annoying to change?\n- Which systems were too tightly connected?\n- What would you do differently if starting over?\n- Did building the \"wrong\" architecture teach you anything useful?\n- Would you build a bigger game next, or clean up the engine first?\n\nThis note is for future you. It does not need to sound fancy.\n\n## Done when\n\n- [ ] 3D Pong is playable and feels reasonably tuned\n- [ ] No obvious visual glitches happen during normal play\n- [ ] `IDEAS.md` has a retrospective entry of at least 200 words\n- [ ] `README.md` says project v1 is done\n- [ ] `README.md` includes a short \"what's next\" note\n\n## Depends on\n\nFinish #18 first.\n\n## Time estimate\n\nLocal estimate: **6–10 hours** of focused work.\n\nAssumes basic Rust knowledge, no prior graphics experience, and the type-along + small-variation working pattern. This is a local estimate for this issue only; see `README.md` for the global cursus estimate.\n",
+      "closedAt": null,
+      "comments": [
+        {
+          "id": "IC_kwDOSY0Wwc8AAAABBwfXgQ",
+          "author": {
+            "login": "majorgilles"
+          },
+          "authorAssociation": "OWNER",
+          "body": "**Estimated effort:** 6-10 hours",
+          "createdAt": "2026-05-09T15:53:04Z",
+          "includesCreatedEdit": false,
+          "isMinimized": false,
+          "minimizedReason": "",
+          "reactionGroups": [],
+          "url": "https://github.com/majorgilles/rust_game_engine/issues/19#issuecomment-4412921729",
+          "viewerDidAuthor": true
+        }
+      ],
+      "createdAt": "2026-05-09T15:51:31Z",
+      "labels": [],
+      "milestone": null,
+      "number": 19,
+      "state": "OPEN",
+      "stateReason": "",
+      "title": "Phase 2b #5: 3D Pong — polish + retrospective",
+      "updatedAt": "2026-05-16T21:48:10Z",
+      "url": "https://github.com/majorgilles/rust_game_engine/issues/19"
+    }
+  ]
+}
